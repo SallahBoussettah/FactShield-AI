@@ -26,12 +26,16 @@ const Navigation: React.FC<NavigationProps> = ({ transparent = false }) => {
     navigate('/');
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <nav className={`w-full ${transparent ? 'bg-transparent' : 'bg-white shadow-sm'}`}>
+    <nav className={`w-full fixed top-0 z-50 transition-all duration-300 ${transparent ? 'bg-transparent' : 'bg-white/95 backdrop-blur-sm shadow-sm'}`}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" onClick={scrollToTop} className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-[var(--color-primary)] rounded-md flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-white">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
@@ -43,16 +47,16 @@ const Navigation: React.FC<NavigationProps> = ({ transparent = false }) => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <div className="flex space-x-6">
-              <Link to="/" className="text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] transition-colors">
+              <Link to="/" onClick={scrollToTop} className="text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] transition-colors">
                 Home
               </Link>
-              <Link to="/features" className="text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] transition-colors">
+              <Link to="/features" onClick={scrollToTop} className="text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] transition-colors">
                 Features
               </Link>
-              <Link to="/pricing" className="text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] transition-colors">
+              <Link to="/pricing" onClick={scrollToTop} className="text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] transition-colors">
                 Pricing
               </Link>
-              <Link to="/about" className="text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] transition-colors">
+              <Link to="/about" onClick={scrollToTop} className="text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] transition-colors">
                 About
               </Link>
             </div>
@@ -106,10 +110,10 @@ const Navigation: React.FC<NavigationProps> = ({ transparent = false }) => {
               </div>
             ) : (
               <div className="flex space-x-4">
-                <Link to="/login">
+                <Link to="/login" onClick={scrollToTop}>
                   <Button variant="outline">Log In</Button>
                 </Link>
-                <Link to="/register">
+                <Link to="/register" onClick={scrollToTop}>
                   <Button>Sign Up</Button>
                 </Link>
               </div>
@@ -147,28 +151,28 @@ const Navigation: React.FC<NavigationProps> = ({ transparent = false }) => {
             <Link 
               to="/" 
               className="px-2 py-2 text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] hover:bg-[var(--color-neutral-50)] rounded-md transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => { setIsMenuOpen(false); scrollToTop(); }}
             >
               Home
             </Link>
             <Link 
               to="/features" 
               className="px-2 py-2 text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] hover:bg-[var(--color-neutral-50)] rounded-md transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => { setIsMenuOpen(false); scrollToTop(); }}
             >
               Features
             </Link>
             <Link 
               to="/pricing" 
               className="px-2 py-2 text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] hover:bg-[var(--color-neutral-50)] rounded-md transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => { setIsMenuOpen(false); scrollToTop(); }}
             >
               Pricing
             </Link>
             <Link 
               to="/about" 
               className="px-2 py-2 text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] hover:bg-[var(--color-neutral-50)] rounded-md transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => { setIsMenuOpen(false); scrollToTop(); }}
             >
               About
             </Link>
@@ -208,12 +212,12 @@ const Navigation: React.FC<NavigationProps> = ({ transparent = false }) => {
               </>
             ) : (
               <div className="flex flex-col space-y-2 pt-2">
-                <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                <Link to="/login" onClick={() => { setIsMenuOpen(false); scrollToTop(); }}>
                   <Button variant="outline" className="w-full justify-center">
                     Log In
                   </Button>
                 </Link>
-                <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                <Link to="/register" onClick={() => { setIsMenuOpen(false); scrollToTop(); }}>
                   <Button className="w-full justify-center">
                     Sign Up
                   </Button>

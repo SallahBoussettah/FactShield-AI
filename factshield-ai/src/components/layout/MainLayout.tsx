@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import Navigation from './Navigation';
 
 interface MainLayoutProps {
@@ -6,12 +7,16 @@ interface MainLayoutProps {
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-[var(--color-neutral-50)] flex flex-col">
       <header>
         <Navigation />
       </header>
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow pt-20">
         {children}
       </main>
       <footer className="bg-[var(--color-neutral-800)] text-neutral-200">
@@ -26,25 +31,25 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Browser Extension</a></li>
+                <li><Link to="/features" onClick={scrollToTop} className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Features</Link></li>
+                <li><Link to="/pricing" onClick={scrollToTop} className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link to="/browser-extension" onClick={scrollToTop} className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Browser Extension</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-[var(--color-neutral-400)] hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Careers</a></li>
+                <li><Link to="/about" onClick={scrollToTop} className="text-[var(--color-neutral-400)] hover:text-white transition-colors">About</Link></li>
+                <li><Link to="/blog" onClick={scrollToTop} className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Blog</Link></li>
+                <li><Link to="/careers" onClick={scrollToTop} className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Careers</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Legal</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Cookie Policy</a></li>
+                <li><Link to="/privacy-policy" onClick={scrollToTop} className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms-of-service" onClick={scrollToTop} className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><Link to="/cookie-policy" onClick={scrollToTop} className="text-[var(--color-neutral-400)] hover:text-white transition-colors">Cookie Policy</Link></li>
               </ul>
             </div>
           </div>

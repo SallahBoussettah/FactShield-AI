@@ -57,12 +57,6 @@
     - _Requirements: 3.3_
     
   - [x] 3.3 Implement authentication state management
-
-
-
-
-
-
     - Set up context/store for user authentication state
     - Create JWT storage and refresh mechanisms
     - Add protected route components
