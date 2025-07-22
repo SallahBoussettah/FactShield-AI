@@ -103,6 +103,7 @@ export const forgotPassword = async (email: string): Promise<void> => {
     // await post<void>('/auth/forgot-password', { email });
 
     // Note: email parameter is intentionally unused in this mock implementation
+    console.log('Password reset requested for:', email);
     // but would be used in a real implementation to send the reset link
 
     // Simulate API call with a delay

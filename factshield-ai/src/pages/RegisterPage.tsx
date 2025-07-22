@@ -1,29 +1,23 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import RegisterForm from '../components/auth/RegisterForm';
 import type { RegisterFormData } from '../types/auth';
-import { useAuth } from '../contexts/AuthContext';
-import { useAuthRedirect } from '../hooks/useAuthRedirect';
 
 const RegisterPage: React.FC = () => {
-  const { authState, register } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
-  
-  // Redirect if user is already authenticated
-  useAuthRedirect();
 
-  const handleRegister = async (formData: RegisterFormData) => {
+  const handleRegister = async (data: RegisterFormData) => {
     try {
-      await register(formData);
-      
-      // On successful registration, redirect to login
+      await register(data);
+      // Redirect to login page after successful registration
       navigate('/login', { 
-        state: { 
-          message: 'Registration successful! Please log in with your new account.' 
-        } 
+        state: { message: 'Registration successful! Please sign in.' }
       });
-    } catch (err) {
-      // Error is handled in the auth context
+    } catch (error) {
+      // Error handling is done in the RegisterForm component
+      throw error;
     }
   };
 
@@ -33,15 +27,12 @@ const RegisterPage: React.FC = () => {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[var(--color-primary)]">FactShield AI</h1>
           <p className="text-[var(--color-neutral-600)]">
-            Create an account to start fact-checking content
+            Create your account to start fact-checking content
           </p>
         </div>
         
-        <RegisterForm 
-          onSubmit={handleRegister} 
-          isLoading={authState.loading} 
-          error={authState.error} 
-        />
+        <RegisterForm onSubmit={handleRegister} />
+        
       </div>
     </div>
   );

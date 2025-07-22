@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
+import DashboardPage from './pages/DashboardPage'
 import FeaturesPage from './pages/FeaturesPage'
 import PricingPage from './pages/PricingPage'
 import AboutPage from './pages/AboutPage'
@@ -41,8 +42,7 @@ function App() {
             path="/dashboard" 
             element={
               <ProtectedRoute>
-                {/* Dashboard will be implemented in a future task */}
-                <div className="p-8">Dashboard coming soon</div>
+                <DashboardPage />
               </ProtectedRoute>
             } 
           />
