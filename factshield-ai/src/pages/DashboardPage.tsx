@@ -3,11 +3,14 @@ import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import ContentUpload from '../components/dashboard/ContentUpload';
 import UrlAnalysis from '../components/dashboard/UrlAnalysis';
+import AnalysisResults from '../components/dashboard/AnalysisResults';
+import type { AnalysisResult } from '../types/upload';
 
 const DashboardPage: React.FC = () => {
   const { authState } = useAuth();
   const [activeSection, setActiveSection] = useState('overview');
   const [analysisTab, setAnalysisTab] = useState<'upload' | 'url'>('upload');
+  const [currentAnalysisResult, setCurrentAnalysisResult] = useState<AnalysisResult | null>(null);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -196,20 +199,29 @@ const DashboardPage: React.FC = () => {
               </div>
 
               <div className="p-6">
-                {analysisTab === 'upload' ? (
-                  <ContentUpload
-                    onFileAnalyzed={(fileId, results) => {
-                      console.log('File analyzed:', fileId, results);
-                      // TODO: Handle analysis results in future tasks
-                    }}
-                  />
+                {currentAnalysisResult ? (
+                  <div className="space-y-4">
+                    <AnalysisResults 
+                      results={currentAnalysisResult} 
+                      onReset={() => setCurrentAnalysisResult(null)} 
+                    />
+                  </div>
                 ) : (
-                  <UrlAnalysis
-                    onUrlAnalyzed={(url, results) => {
-                      console.log('URL analyzed:', url, results);
-                      // TODO: Handle analysis results in future tasks
-                    }}
-                  />
+                  analysisTab === 'upload' ? (
+                    <ContentUpload
+                      onFileAnalyzed={(fileId, results) => {
+                        console.log('File analyzed:', fileId, results);
+                        setCurrentAnalysisResult(results);
+                      }}
+                    />
+                  ) : (
+                    <UrlAnalysis
+                      onUrlAnalyzed={(url, results) => {
+                        console.log('URL analyzed:', url, results);
+                        setCurrentAnalysisResult(results);
+                      }}
+                    />
+                  )
                 )}
               </div>
             </div>

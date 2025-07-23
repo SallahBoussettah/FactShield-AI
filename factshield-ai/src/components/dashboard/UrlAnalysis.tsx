@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import type { AnalysisResult, UrlAnalysisProps } from '../../types/upload';
+import AnalysisResults from './AnalysisResults';
 
 interface UrlAnalysisState {
   url: string;
@@ -270,88 +271,7 @@ const UrlAnalysis: React.FC<UrlAnalysisProps> = ({ onUrlAnalyzed }) => {
 
       {/* Results Display */}
       {state.results && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-[var(--color-neutral-200)]">
-          <div className="flex items-center mb-4">
-            <div className="p-2 bg-[var(--color-secondary)]/10 rounded-lg mr-3">
-              <svg className="w-6 h-6 text-[var(--color-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold text-[var(--color-neutral-900)]">
-                Analysis Complete
-              </h4>
-              <p className="text-sm text-[var(--color-neutral-600)]">
-                {state.results.summary}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h5 className="font-medium text-[var(--color-neutral-900)]">
-              Extracted Claims ({state.results.claims.length})
-            </h5>
-            
-            {state.results.claims.map((claim) => (
-              <div key={claim.id} className="border border-[var(--color-neutral-200)] rounded-lg p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <p className="text-[var(--color-neutral-900)] flex-1 mr-4">
-                    "{claim.text}"
-                  </p>
-                  <div className="flex items-center space-x-2 flex-shrink-0">
-                    <span className={`
-                      px-2 py-1 rounded-full text-xs font-medium
-                      ${claim.credibilityScore >= 0.8 
-                        ? 'bg-[var(--color-secondary)]/10 text-[var(--color-secondary)]'
-                        : claim.credibilityScore >= 0.6
-                        ? 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
-                        : 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]'
-                      }
-                    `}>
-                      {claim.credibilityScore >= 0.8 ? 'High' : claim.credibilityScore >= 0.6 ? 'Medium' : 'Low'} Credibility
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm mb-3">
-                  <div>
-                    <span className="text-[var(--color-neutral-600)]">Confidence: </span>
-                    <span className="font-medium">{Math.round(claim.confidence * 100)}%</span>
-                  </div>
-                  <div>
-                    <span className="text-[var(--color-neutral-600)]">Credibility Score: </span>
-                    <span className="font-medium">{Math.round(claim.credibilityScore * 100)}%</span>
-                  </div>
-                </div>
-
-                {claim.sources.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-[var(--color-neutral-700)] mb-2">
-                      Sources ({claim.sources.length})
-                    </p>
-                    <div className="space-y-2">
-                      {claim.sources.map((source, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-[var(--color-neutral-50)] rounded">
-                          <a
-                            href={source.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[var(--color-primary)] hover:underline text-sm flex-1 mr-2"
-                          >
-                            {source.title}
-                          </a>
-                          <span className="text-xs text-[var(--color-neutral-600)]">
-                            {Math.round(source.reliability * 100)}% reliable
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <AnalysisResults results={state.results} onReset={handleReset} />
       )}
     </div>
   );
