@@ -185,14 +185,16 @@
 
 ## Backend Implementation
 
-- [ ] 11. Backend Project Setup
+- [x] 11. Backend Project Setup // analyze frontend first
   - Set up Node.js/Express project
   - Configure TypeScript and project structure
   - Set up database connection with PostgreSQL / Password = "SATOSANb6..."
   - Implement basic middleware (logging, CORS, etc.)
   - _Requirements: 6.1_
 
-- [ ] 12. Authentication System
+- [-] 12. Authentication System
+
+
   - [ ] 12.1 Review frontend auth components
     - Analyze existing auth UI components and requirements
     - Document API endpoints needed for authentication
@@ -206,7 +208,7 @@
     - _Requirements: 3.2_
   
   - [ ] 12.3 Build authentication controllers
-    - Create registration endpoint
+    - Create registration endpoint / Make sure things are connected properly with the register and login from frontend
     - Implement login with JWT generation
     - Add token refresh and validation
     - Create logout functionality
