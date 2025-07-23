@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FactShield AI Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <header class="options-header">
+      <img src="../assets/logo.png" alt="FactShield AI Logo" class="logo">
+      <h1>FactShield AI Settings</h1>
+    </header>
+    
+    <main class="options-content">
+      <section class="options-section">
+        <h2>Account</h2>
+        <div id="account-status" class="account-status">
+          <div id="logged-out-view">
+            <p>You are not logged in. Sign in to access your FactShield AI account.</p>
+            <button id="login-btn" class="primary-btn">Log In</button>
+            <button id="register-btn" class="secondary-btn">Register</button>
+          </div>
+          
+          <div id="logged-in-view" style="display: none;">
+            <p>Logged in as <span id="user-email">user@example.com</span></p>
+            <button id="logout-btn" class="secondary-btn">Log Out</button>
+          </div>
+        </div>
+      </section>
+      
+      <section class="options-section">
+        <h2>Analysis Settings</h2>
+        
+        <div class="option-item">
+          <div class="option-label">
+            <label for="highlight-claims">Highlight claims on webpages</label>
+            <p class="option-description">Automatically highlight factual claims detected on webpages</p>
+          </div>
+          <div class="option-control">
+            <label class="toggle">
+              <input type="checkbox" id="highlight-claims" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="option-item">
+          <div class="option-label">
+            <label for="auto-analyze">Auto-analyze pages</label>
+            <p class="option-description">Automatically analyze pages as you browse</p>
+          </div>
+          <div class="option-control">
+            <label class="toggle">
+              <input type="checkbox" id="auto-analyze">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="option-item">
+          <div class="option-label">
+            <label for="notifications-enabled">Show notifications</label>
+            <p class="option-description">Display notifications when analysis is complete</p>
+          </div>
+          <div class="option-control">
+            <label class="toggle">
+              <input type="checkbox" id="notifications-enabled" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+      
+      <section class="options-section">
+        <h2>Advanced Settings</h2>
+        
+        <div class="option-item">
+          <div class="option-label">
+            <label for="api-endpoint">API Endpoint</label>
+            <p class="option-description">URL of the FactShield AI API</p>
+          </div>
+          <div class="option-control">
+            <input type="text" id="api-endpoint" class="text-input" value="https://api.factshield-ai.com">
+          </div>
+        </div>
+        
+        <div class="option-item">
+          <div class="option-label">
+            <label for="sync-history">Sync history with account</label>
+            <p class="option-description">Synchronize your analysis history with your account</p>
+          </div>
+          <div class="option-control">
+            <label class="toggle">
+              <input type="checkbox" id="sync-history" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+      
+      <section class="options-section">
+        <h2>About</h2>
+        <div class="about-content">
+          <p>FactShield AI is an AI-powered browser extension designed to detect misinformation in real-time.</p>
+          <p>Version: 1.0.0</p>
+          <p><a href="https://factshield-ai.com/privacy" target="_blank">Privacy Policy</a> | <a href="https://factshield-ai.com/terms" target="_blank">Terms of Service</a></p>
+        </div>
+      </section>
+    </main>
+    
+    <footer class="options-footer">
+      <button id="save-btn" class="primary-btn">Save Settings</button>
+      <button id="reset-btn" class="secondary-btn">Reset to Defaults</button>
+    </footer>
+  </div>
+  
+  <script src="options.js"></script>
+</body>
+</html>

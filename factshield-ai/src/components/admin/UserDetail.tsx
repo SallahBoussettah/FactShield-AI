@@ -222,8 +222,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
               onChange={handleChange}
               required
               className={`mt-1 block w-full border rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-[var(--color-primary)] ${errors.name
-                  ? 'border-[var(--color-danger)] focus:border-[var(--color-danger)]'
-                  : 'border-[var(--color-neutral-300)] focus:border-[var(--color-primary)]'
+                ? 'border-[var(--color-danger)] focus:border-[var(--color-danger)]'
+                : 'border-[var(--color-neutral-300)] focus:border-[var(--color-primary)]'
                 }`}
             />
             {errors.name && (
@@ -244,8 +244,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
               onChange={handleChange}
               required
               className={`mt-1 block w-full border rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-[var(--color-primary)] ${errors.email
-                  ? 'border-[var(--color-danger)] focus:border-[var(--color-danger)]'
-                  : 'border-[var(--color-neutral-300)] focus:border-[var(--color-primary)]'
+                ? 'border-[var(--color-danger)] focus:border-[var(--color-danger)]'
+                : 'border-[var(--color-neutral-300)] focus:border-[var(--color-primary)]'
                 }`}
             />
             {errors.email && (

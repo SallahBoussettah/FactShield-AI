@@ -1,0 +1,219 @@
+/* FactShield AI Extension Styles */
+
+/* Highlight styles */
+.factshield-highlight {
+  cursor: pointer;
+  padding: 0 2px;
+  border-radius: 2px;
+  position: relative;
+}
+
+.factshield-low-credibility {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-bottom: 2px solid #ef4444;
+}
+
+.factshield-medium-credibility {
+  background-color: rgba(245, 158, 11, 0.2);
+  border-bottom: 2px solid #f59e0b;
+}
+
+.factshield-high-credibility {
+  background-color: rgba(16, 185, 129, 0.2);
+  border-bottom: 2px solid #10b981;
+}
+
+/* Popup styles */
+.factshield-popup {
+  position: fixed;
+  z-index: 9999;
+  width: 320px;
+  max-width: 90vw;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  overflow: hidden;
+}
+
+.factshield-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #4f46e5;
+  color: white;
+}
+
+.factshield-popup-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.factshield-close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.factshield-popup-content {
+  padding: 16px;
+}
+
+.factshield-claim {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.factshield-credibility {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.factshield-credibility-low {
+  background-color: #fecaca;
+  color: #b91c1c;
+}
+
+.factshield-credibility-medium {
+  background-color: #fed7aa;
+  color: #c2410c;
+}
+
+.factshield-credibility-high {
+  background-color: #a7f3d0;
+  color: #065f46;
+}
+
+.factshield-credibility-unknown {
+  background-color: #e5e7eb;
+  color: #4b5563;
+}
+
+.factshield-popup-content h3 {
+  font-size: 14px;
+  margin: 12px 0 8px;
+}
+
+.factshield-popup-content ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+}
+
+.factshield-popup-content a {
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.factshield-popup-content a:hover {
+  text-decoration: underline;
+}
+
+.factshield-popup-footer {
+  padding: 8px 16px;
+  background-color: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  font-size: 12px;
+  text-align: center;
+}
+
+.factshield-popup-footer a {
+  color: #6b7280;
+  text-decoration: none;
+}
+
+/* Indicator styles */
+.factshield-indicator {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 12px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.factshield-indicator-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.factshield-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: factshield-spin 1s linear infinite;
+}
+
+@keyframes factshield-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.factshield-indicator-content p {
+  margin: 0;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+/* Notification styles */
+.factshield-notification {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 9999;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 12px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  max-width: 320px;
+  animation: factshield-fade-in 0.3s ease-out;
+}
+
+@keyframes factshield-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.factshield-notification-info {
+  background-color: #eff6ff;
+  border-left: 4px solid #3b82f6;
+}
+
+.factshield-notification-error {
+  background-color: #fee2e2;
+  border-left: 4px solid #ef4444;
+}
+
+.factshield-notification-success {
+  background-color: #ecfdf5;
+  border-left: 4px solid #10b981;
+}
+
+.factshield-notification-content p {
+  margin: 0;
+  font-size: 14px;
+  color: #1f2937;
+}

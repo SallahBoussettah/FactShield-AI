@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to FactShield AI</title>
+  <link rel="stylesheet" href="options.css">
+  <style>
+    .onboarding-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    
+    .onboarding-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .onboarding-header .logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 16px;
+    }
+    
+    .onboarding-header h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    
+    .onboarding-header p {
+      font-size: 16px;
+      color: var(--neutral-600);
+    }
+    
+    .step-container {
+      margin-bottom: 48px;
+    }
+    
+    .step {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      padding: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    
+    .step-number {
+      background-color: var(--primary-color);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    
+    .step-content h2 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+    
+    .step-content p {
+      color: var(--neutral-600);
+      margin-bottom: 16px;
+    }
+    
+    .step-image {
+      max-width: 100%;
+      border-radius: 4px;
+      border: 1px solid var(--neutral-200);
+      margin-top: 16px;
+    }
+    
+    .cta-container {
+      text-align: center;
+      margin-top: 32px;
+    }
+    
+    .cta-container .primary-btn {
+      padding: 12px 24px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="onboarding-container">
+    <header class="onboarding-header">
+      <img src="../assets/logo.png" alt="FactShield AI Logo" class="logo">
+      <h1>Welcome to FactShield AI</h1>
+      <p>Your AI-powered defense against misinformation</p>
+    </header>
+    
+    <div class="step-container">
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h2>Create an Account</h2>
+          <p>Sign up for a FactShield AI account to access all features and sync your analysis history across devices.</p>
+          <div class="cta-container">
+            <button id="create-account-btn" class="primary-btn">Create Account</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h2>Analyze Web Content</h2>
+          <p>Click the FactShield AI icon in your browser toolbar to analyze the current webpage or selected text for misinformation.</p>
+          <p>The extension will highlight potentially misleading claims and provide credibility assessments.</p>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h2>Customize Your Experience</h2>
+          <p>Visit the extension settings to customize how FactShield AI works for you.</p>
+          <p>You can enable auto-analysis, adjust notification preferences, and more.</p>
+          <div class="cta-container">
+            <button id="settings-btn" class="secondary-btn">Open Settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="cta-container">
+      <button id="get-started-btn" class="primary-btn">Get Started</button>
+    </div>
+  </div>
+  
+  <script>
+    // DOM Elements
+    const createAccountBtn = document.getElementById('create-account-btn');
+    const settingsBtn = document.getElementById('settings-btn');
+    const getStartedBtn = document.getElementById('get-started-btn');
+    
+    // Default API endpoint
+    const API_BASE_URL = 'https://api.factshield-ai.com';
+    
+    // Event listeners
+    createAccountBtn.addEventListener('click', () => {
+      // Get API endpoint from settings
+      chrome.storage.local.get('settings', (data) => {
+        const settings = data.settings || { apiEndpoint: API_BASE_URL };
+        const endpoint = settings.apiEndpoint || API_BASE_URL;
+        
+        // Open registration page in a new tab
+        chrome.tabs.create({ url: `${endpoint}/auth/register?source=extension` });
+      });
+    });
+    
+    settingsBtn.addEventListener('click', () => {
+      // Open options page
+      chrome.runtime.openOptionsPage();
+    });
+    
+    getStartedBtn.addEventListener('click', () => {
+      // Close this tab
+      window.close();
+    });
+  </script>
+</body>
+</html>

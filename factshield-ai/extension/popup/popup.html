@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FactShield AI</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="popup-header">
+      <img src="../assets/logo.png" alt="FactShield AI Logo" class="logo">
+      <h1>FactShield AI</h1>
+    </header>
+    
+    <div class="login-container">
+      <div id="logged-out-view">
+        <p>Sign in to access your FactShield AI account</p>
+        <button id="login-btn" class="primary-btn">Log In</button>
+        <button id="register-btn" class="secondary-btn">Register</button>
+      </div>
+      
+      <div id="logged-in-view" style="display: none;">
+        <p>Welcome back, <span id="user-name">User</span>!</p>
+        <button id="logout-btn" class="secondary-btn">Log Out</button>
+      </div>
+    </div>
+    
+    <div class="analysis-container">
+      <h2>Quick Analysis</h2>
+      <div class="analysis-options">
+        <button id="analyze-page-btn" class="action-btn">Analyze Current Page</button>
+        <button id="analyze-selection-btn" class="action-btn">Analyze Selection</button>
+      </div>
+      
+      <div id="analysis-results" class="results-container">
+        <!-- Results will be displayed here -->
+      </div>
+    </div>
+    
+    <footer class="popup-footer">
+      <button id="settings-btn" class="icon-btn">⚙️</button>
+      <span>FactShield AI v1.0.0</span>
+    </footer>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
