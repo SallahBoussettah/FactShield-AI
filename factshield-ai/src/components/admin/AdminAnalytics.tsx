@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import DateRangePicker from '../common/DateRangePicker';
 import MetricCard from '../common/MetricCard';
 import LineChart from '../charts/LineChart';
@@ -92,7 +91,6 @@ const mockAnalyticsData = {
 };
 
 const AdminAnalytics: React.FC = () => {
-  const { authState } = useAuth();
   const [dateRange, setDateRange] = useState({ startDate: '2025-07-16', endDate: '2025-07-23' });
   const [activeTab, setActiveTab] = useState('overview');
 

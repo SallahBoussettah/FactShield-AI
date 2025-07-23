@@ -25,7 +25,7 @@ const ContentDetail: React.FC<ContentDetailProps> = ({
       // In a real app, this would make an API call
       const updatedContent = {
         ...content,
-        status: 'approved',
+        status: 'approved' as const,
         moderationNotes: moderationNotes
       };
       
@@ -51,7 +51,7 @@ const ContentDetail: React.FC<ContentDetailProps> = ({
       // In a real app, this would make an API call
       const updatedContent = {
         ...content,
-        status: 'rejected',
+        status: 'rejected' as const,
         moderationNotes: moderationNotes
       };
       

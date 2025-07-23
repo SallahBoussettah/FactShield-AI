@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import RoleBasedAccess from './RoleBasedAccess';
 import AIModelCard from './settings/AIModelCard';
 import NotificationCard from './settings/NotificationCard';
