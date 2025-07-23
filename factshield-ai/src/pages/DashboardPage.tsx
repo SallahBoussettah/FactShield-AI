@@ -18,7 +18,7 @@ const DashboardPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('overview');
   const [analysisTab, setAnalysisTab] = useState<'upload' | 'url'>('upload');
   const [currentAnalysisResult, setCurrentAnalysisResult] = useState<AnalysisResult | null>(null);
-  
+
   // History state
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
@@ -211,9 +211,9 @@ const DashboardPage: React.FC = () => {
               <div className="p-6">
                 {currentAnalysisResult ? (
                   <div className="space-y-4">
-                    <AnalysisResults 
-                      results={currentAnalysisResult} 
-                      onReset={() => setCurrentAnalysisResult(null)} 
+                    <AnalysisResults
+                      results={currentAnalysisResult}
+                      onReset={() => setCurrentAnalysisResult(null)}
                     />
                   </div>
                 ) : (
@@ -239,8 +239,8 @@ const DashboardPage: React.FC = () => {
             {/* Demo section for testing */}
             <div className="bg-[var(--color-neutral-50)] rounded-lg p-4 border border-[var(--color-neutral-200)]">
               <p className="text-sm text-[var(--color-neutral-600)]">
-                <strong>Demo Note:</strong> Both upload and URL analysis components are now functional. 
-                The upload component supports drag-and-drop with file validation, and the URL analysis 
+                <strong>Demo Note:</strong> Both upload and URL analysis components are now functional.
+                The upload component supports drag-and-drop with file validation, and the URL analysis
                 form includes proper validation and error handling. Try both tabs to test the functionality!
               </p>
             </div>
@@ -255,7 +255,7 @@ const DashboardPage: React.FC = () => {
                 View your past fact-checking analyses and results.
               </p>
             </div>
-            
+
             {selectedItem ? (
               <HistoryDetail
                 historyItem={selectedItem}
@@ -269,7 +269,7 @@ const DashboardPage: React.FC = () => {
                   onFilterChange={handleHistoryFilterChange}
                   initialFilters={historyFilters}
                 />
-                
+
                 <HistoryList
                   items={historyItems}
                   pagination={historyPagination}
@@ -291,7 +291,7 @@ const DashboardPage: React.FC = () => {
                 View insights and trends from your fact-checking analyses.
               </p>
             </div>
-            
+
             <AnalyticsDashboard />
           </div>
         );
@@ -320,7 +320,7 @@ const DashboardPage: React.FC = () => {
   // Load history items
   const loadHistoryItems = async () => {
     if (!authState.user) return;
-    
+
     setIsHistoryLoading(true);
     try {
       const result = await historyService.getUserHistory(
@@ -329,7 +329,7 @@ const DashboardPage: React.FC = () => {
         historyPagination.itemsPerPage,
         historyFilters
       );
-      
+
       setHistoryItems(result.items);
       setHistoryPagination(result.pagination);
     } catch (error) {
@@ -338,14 +338,14 @@ const DashboardPage: React.FC = () => {
       setIsHistoryLoading(false);
     }
   };
-  
+
   // Load history on mount and when filters or pagination change
   useEffect(() => {
     if (activeSection === 'history') {
       loadHistoryItems();
     }
   }, [authState.user, historyPagination.currentPage, historyFilters, activeSection]);
-  
+
   // Handle custom events from RecentActivity component
   useEffect(() => {
     const handleViewHistoryItemEvent = (event: Event) => {
@@ -354,20 +354,20 @@ const DashboardPage: React.FC = () => {
       // Use the existing function to view the history item
       handleViewHistoryItem(customEvent.detail);
     };
-    
+
     const handleViewAllHistory = () => {
       setActiveSection('history');
     };
-    
+
     window.addEventListener('viewHistoryItem', handleViewHistoryItemEvent);
     window.addEventListener('viewAllHistory', handleViewAllHistory);
-    
+
     return () => {
       window.removeEventListener('viewHistoryItem', handleViewHistoryItemEvent);
       window.removeEventListener('viewAllHistory', handleViewAllHistory);
     };
   }, []);
-  
+
   // Handle page change
   const handleHistoryPageChange = (page: number) => {
     setHistoryPagination(prev => ({
@@ -375,7 +375,7 @@ const DashboardPage: React.FC = () => {
       currentPage: page
     }));
   };
-  
+
   // Handle filter change
   const handleHistoryFilterChange = (newFilters: HistoryFilter) => {
     setHistoryFilters(newFilters);
@@ -385,12 +385,12 @@ const DashboardPage: React.FC = () => {
       currentPage: 1
     }));
   };
-  
+
   // View history item details
   const handleViewHistoryItem = async (item: HistoryItem) => {
     setSelectedItem(item);
     setIsHistoryResultsLoading(true);
-    
+
     try {
       const results = await historyService.getHistoryItemResults(item.analysisId);
       setHistoryAnalysisResults(results);
@@ -401,14 +401,14 @@ const DashboardPage: React.FC = () => {
       setIsHistoryResultsLoading(false);
     }
   };
-  
+
   // Delete history item
   const handleDeleteHistoryItem = async (item: HistoryItem) => {
     try {
       await historyService.deleteHistoryItem(item.id);
       // Refresh the list
       loadHistoryItems();
-      
+
       // If the deleted item was selected, go back to the list
       if (selectedItem && selectedItem.id === item.id) {
         setSelectedItem(null);
@@ -418,7 +418,7 @@ const DashboardPage: React.FC = () => {
       console.error('Error deleting history item:', error);
     }
   };
-  
+
   // Go back to history list
   const handleBackToList = () => {
     setSelectedItem(null);
