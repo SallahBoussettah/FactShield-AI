@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 import DashboardPage from './pages/DashboardPage'
+import AdminPage from './pages/AdminPage'
 import FeaturesPage from './pages/FeaturesPage'
 import PricingPage from './pages/PricingPage'
 import AboutPage from './pages/AboutPage'
@@ -51,11 +52,10 @@ function App() {
           
           {/* Role-based routes - require specific roles */}
           <Route 
-            path="/admin" 
+            path="/admin/*" 
             element={
-              <RoleBasedRoute roles={['admin']}>
-                {/* Admin dashboard will be implemented in a future task */}
-                <div className="p-8">Admin Dashboard coming soon</div>
+              <RoleBasedRoute roles={['admin', 'editor', 'analyst']}>
+                <AdminPage />
               </RoleBasedRoute>
             } 
           />

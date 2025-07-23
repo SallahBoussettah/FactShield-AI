@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { SettingsProvider } from '../contexts/SettingsContext';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import ContentUpload from '../components/dashboard/ContentUpload';
@@ -22,6 +22,7 @@ import * as historyService from '../services/historyService';
 const DashboardPage: React.FC = () => {
   const { authState } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   
   // Check URL parameters for section
   const getInitialSection = () => {

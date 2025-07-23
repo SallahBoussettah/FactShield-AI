@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { Link } from 'react-router-dom';
 import UserProfileSection from './UserProfileSection';
 
 interface DashboardLayoutProps {
@@ -13,6 +15,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   onSectionChange
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { authState } = useAuth();
 
   const navigationItems = [
     {
@@ -128,6 +131,23 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 {item.name}
               </button>
             ))}
+            
+            {/* Admin Dashboard Link - Only visible for admin users */}
+            {authState.user?.roles?.includes('admin') && (
+              <Link
+                to="/admin"
+                className="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 mt-2
+                  text-[var(--color-primary-700)] hover:bg-[var(--color-primary-50)] border border-[var(--color-primary-200)]"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <span className="mr-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </span>
+                Admin Dashboard
+              </Link>
+            )}
           </nav>
 
           {/* User Profile Section */}
@@ -167,8 +187,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </div>
           </div>
 
-          {/* Notifications */}
+          {/* Notifications and Admin Indicator */}
           <div className="flex items-center space-x-4">
+            {/* Admin Badge - Only visible for admin users */}
+            {authState.user?.roles?.includes('admin') && (
+              <Link 
+                to="/admin"
+                className="flex items-center px-3 py-1 text-xs font-medium rounded-full bg-[var(--color-primary-50)] text-[var(--color-primary-700)] border border-[var(--color-primary-200)] hover:bg-[var(--color-primary-100)] transition-colors"
+              >
+                <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Admin
+              </Link>
+            )}
+            
             <button className="relative p-2 rounded-lg text-[var(--color-neutral-400)] hover:text-[var(--color-neutral-600)] hover:bg-[var(--color-neutral-100)] transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM10.07 2.82l3.12 3.12M7.05 5.84l3.12 3.12M4.03 8.86l3.12 3.12M1.01 11.88l3.12 3.12" />
