@@ -4,18 +4,12 @@ const settingsBtn = document.getElementById('settings-btn');
 const getStartedBtn = document.getElementById('get-started-btn');
 
 // Default API endpoint
-const API_BASE_URL = 'https://api.factshield-ai.com';
+const API_BASE_URL = 'http://localhost:5173/api';
 
 // Event listeners
 createAccountBtn.addEventListener('click', () => {
-  // Get API endpoint from settings
-  chrome.storage.local.get('settings', (data) => {
-    const settings = data.settings || { apiEndpoint: API_BASE_URL };
-    const endpoint = settings.apiEndpoint || API_BASE_URL;
-    
-    // Open registration page in a new tab
-    chrome.tabs.create({ url: `${endpoint}/auth/register?source=extension` });
-  });
+  // Open registration page in a new tab
+  chrome.tabs.create({ url: `http://localhost:5173/register?source=extension` });
 });
 
 settingsBtn.addEventListener('click', () => {

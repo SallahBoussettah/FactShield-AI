@@ -20,7 +20,7 @@ const defaultSettings = {
   highlightClaims: true,
   autoAnalyze: false,
   notificationsEnabled: true,
-  apiEndpoint: 'https://api.factshield-ai.com',
+  apiEndpoint: 'http://localhost:5173/api',
   syncHistory: true
 };
 
@@ -28,7 +28,7 @@ const defaultSettings = {
 document.addEventListener('DOMContentLoaded', async () => {
   // Load settings
   loadSettings();
-  
+
   // Check authentication status
   checkAuthStatus();
 });
@@ -38,7 +38,7 @@ async function loadSettings() {
   try {
     const data = await chrome.storage.local.get('settings');
     const settings = data.settings || defaultSettings;
-    
+
     // Apply settings to form
     highlightClaims.checked = settings.highlightClaims;
     autoAnalyze.checked = settings.autoAnalyze;
@@ -62,9 +62,9 @@ async function saveSettings() {
       apiEndpoint: apiEndpoint.value.trim(),
       syncHistory: syncHistory.checked
     };
-    
+
     await chrome.storage.local.set({ settings });
-    
+
     // Show success message
     showMessage('Settings saved successfully!', 'success');
   } catch (error) {
@@ -77,7 +77,7 @@ async function saveSettings() {
 function resetToDefaults() {
   // Apply default settings to form
   applySettings(defaultSettings);
-  
+
   // Show message
   showMessage('Settings reset to defaults. Click Save to apply.', 'info');
 }
@@ -95,7 +95,7 @@ function applySettings(settings) {
 async function checkAuthStatus() {
   try {
     const authData = await chrome.storage.local.get(['authToken', 'userData']);
-    
+
     if (authData.authToken && authData.userData) {
       // User is logged in
       userEmail.textContent = authData.userData.email || 'user@example.com';
@@ -121,15 +121,15 @@ function showMessage(message, type = 'info') {
   if (existingMessage) {
     existingMessage.remove();
   }
-  
+
   // Create message element
   const messageElement = document.createElement('div');
   messageElement.className = `message message-${type}`;
   messageElement.textContent = message;
-  
+
   // Add message to page
   document.querySelector('.options-container').appendChild(messageElement);
-  
+
   // Remove message after 3 seconds
   setTimeout(() => {
     if (messageElement.parentNode) {
@@ -140,30 +140,24 @@ function showMessage(message, type = 'info') {
 
 // Event listeners
 loginBtn.addEventListener('click', () => {
-  // Get API endpoint from settings
-  const endpoint = apiEndpoint.value.trim() || defaultSettings.apiEndpoint;
-  
   // Open login page in a new tab
-  chrome.tabs.create({ url: `${endpoint}/auth/login?source=extension` });
+  chrome.tabs.create({ url: `http://localhost:5173/login?source=extension` });
 });
 
 registerBtn.addEventListener('click', () => {
-  // Get API endpoint from settings
-  const endpoint = apiEndpoint.value.trim() || defaultSettings.apiEndpoint;
-  
   // Open registration page in a new tab
-  chrome.tabs.create({ url: `${endpoint}/auth/register?source=extension` });
+  chrome.tabs.create({ url: `http://localhost:5173/register?source=extension` });
 });
 
 logoutBtn.addEventListener('click', async () => {
   try {
     // Clear auth data
     await chrome.storage.local.remove(['authToken', 'userData']);
-    
+
     // Update UI
     loggedInView.style.display = 'none';
     loggedOutView.style.display = 'block';
-    
+
     // Show message
     showMessage('Logged out successfully.', 'success');
   } catch (error) {

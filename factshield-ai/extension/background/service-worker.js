@@ -2,7 +2,7 @@
 // This script runs in the background and handles communication with the API
 
 // API endpoint (will be configured in the options)
-let API_BASE_URL = 'https://api.factshield-ai.com';
+let API_BASE_URL = 'http://localhost:5173/api';
 
 // Initialize extension when installed
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {

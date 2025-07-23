@@ -279,7 +279,7 @@ function showClaimDetails(claim) {
       ${sourcesHtml}
     </div>
     <div class="factshield-popup-footer">
-      <a href="https://factshield-ai.com" target="_blank">Powered by FactShield AI</a>
+      <a href="http://localhost:5173" target="_blank">Powered by FactShield AI</a>
     </div>
   `;
   

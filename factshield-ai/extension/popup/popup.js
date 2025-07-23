@@ -11,7 +11,7 @@ const userName = document.getElementById('user-name');
 const analysisResults = document.getElementById('analysis-results');
 
 // API endpoint (will be configured in the options)
-const API_BASE_URL = 'https://api.factshield-ai.com';
+const API_BASE_URL = 'http://localhost:5173/api';
 
 // Check authentication status on popup open
 document.addEventListener('DOMContentLoaded', async () => {
@@ -34,13 +34,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Login button click handler
 loginBtn.addEventListener('click', () => {
   // Open login page in a new tab
-  chrome.tabs.create({ url: `${API_BASE_URL}/auth/login?source=extension` });
+  chrome.tabs.create({ url: `http://localhost:5173/login?source=extension` });
 });
 
 // Register button click handler
 registerBtn.addEventListener('click', () => {
   // Open registration page in a new tab
-  chrome.tabs.create({ url: `${API_BASE_URL}/auth/register?source=extension` });
+  chrome.tabs.create({ url: `http://localhost:5173/register?source=extension` });
 });
 
 // Logout button click handler
