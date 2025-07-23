@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import AdminLayout from '../components/admin/AdminLayout';
 import AdminOverview from '../components/admin/AdminOverview';
 import UserManagement from '../components/admin/UserManagement';
+import ContentModeration from '../components/admin/ContentModeration';
+import AdminAnalytics from '../components/admin/AdminAnalytics';
+import SystemSettings from '../components/admin/SystemSettings';
 
 // This is a placeholder component for other admin sections
 // In a real implementation, these would be separate components
@@ -18,6 +22,14 @@ const AdminSectionPlaceholder: React.FC<{ section: string }> = ({ section }) => 
 
 const AdminPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('overview');
+  const location = useLocation();
+  
+  // Check if we have a section in the location state (from navigation)
+  useEffect(() => {
+    if (location.state && location.state.section) {
+      setActiveSection(location.state.section);
+    }
+  }, [location]);
 
   // Define which roles are required for each section
   const sectionRoles = {
@@ -41,11 +53,11 @@ const AdminPage: React.FC = () => {
       case 'users':
         return <UserManagement />;
       case 'content':
-        return <AdminSectionPlaceholder section="content moderation" />;
+        return <ContentModeration />;
       case 'analytics':
-        return <AdminSectionPlaceholder section="analytics" />;
+        return <AdminAnalytics />;
       case 'settings':
-        return <AdminSectionPlaceholder section="system settings" />;
+        return <SystemSettings />;
       default:
         return <AdminOverview />;
     }
