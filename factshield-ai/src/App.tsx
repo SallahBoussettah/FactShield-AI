@@ -47,6 +47,8 @@ function App() {
             } 
           />
           
+          {/* Settings are now part of the dashboard */}
+          
           {/* Role-based routes - require specific roles */}
           <Route 
             path="/admin" 

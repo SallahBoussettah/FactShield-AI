@@ -90,9 +90,12 @@ const Navigation: React.FC<NavigationProps> = ({ transparent = false }) => {
                       Dashboard
                     </Link>
                     <Link 
-                      to="/settings" 
+                      to="/dashboard?section=settings" 
                       className="block px-4 py-2 text-[var(--color-neutral-700)] hover:bg-[var(--color-neutral-50)] hover:text-[var(--color-primary)]"
-                      onClick={() => setIsUserMenuOpen(false)}
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        // The dashboard will handle the section change based on URL parameter
+                      }}
                     >
                       Settings
                     </Link>
@@ -194,7 +197,7 @@ const Navigation: React.FC<NavigationProps> = ({ transparent = false }) => {
                   Dashboard
                 </Link>
                 <Link 
-                  to="/settings" 
+                  to="/dashboard?section=settings" 
                   className="px-2 py-2 text-[var(--color-neutral-600)] hover:text-[var(--color-primary)] hover:bg-[var(--color-neutral-50)] rounded-md transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >

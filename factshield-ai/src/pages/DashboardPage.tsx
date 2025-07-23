@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
+import { SettingsProvider } from '../contexts/SettingsContext';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import ContentUpload from '../components/dashboard/ContentUpload';
 import UrlAnalysis from '../components/dashboard/UrlAnalysis';
@@ -9,14 +11,30 @@ import HistoryFilters from '../components/history/HistoryFilters';
 import HistoryList from '../components/history/HistoryList';
 import HistoryDetail from '../components/history/HistoryDetail';
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
+import AccountSettingsForm from '../components/settings/AccountSettingsForm';
+import NotificationSettings from '../components/settings/NotificationSettings';
+import ThemeSettings from '../components/settings/ThemeSettings';
+import DataManagementSettings from '../components/settings/DataManagementSettings';
 import type { AnalysisResult } from '../types/upload';
 import type { HistoryItem, HistoryFilter, PaginationState } from '../types/history';
 import * as historyService from '../services/historyService';
 
 const DashboardPage: React.FC = () => {
   const { authState } = useAuth();
-  const [activeSection, setActiveSection] = useState('overview');
+  const location = useLocation();
+  
+  // Check URL parameters for section
+  const getInitialSection = () => {
+    const params = new URLSearchParams(location.search);
+    const section = params.get('section');
+    return section && ['overview', 'analyze', 'history', 'analytics', 'settings'].includes(section) 
+      ? section 
+      : 'overview';
+  };
+  
+  const [activeSection, setActiveSection] = useState(getInitialSection());
   const [analysisTab, setAnalysisTab] = useState<'upload' | 'url'>('upload');
+  const [settingsTab, setSettingsTab] = useState<'account' | 'notifications' | 'appearance' | 'data'>('account');
   const [currentAnalysisResult, setCurrentAnalysisResult] = useState<AnalysisResult | null>(null);
 
   // History state
@@ -32,6 +50,56 @@ const DashboardPage: React.FC = () => {
   });
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [isHistoryResultsLoading, setIsHistoryResultsLoading] = useState(false);
+
+  // Wrap settings content with SettingsProvider
+  const renderSettingsContent = () => {
+    return (
+      <SettingsProvider>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--color-neutral-900)]">Settings</h1>
+            <p className="text-[var(--color-neutral-600)] mt-2">
+              Manage your account preferences and settings.
+            </p>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-[var(--color-neutral-200)]">
+            <div className="border-b border-[var(--color-neutral-200)]">
+              <nav className="-mb-px flex space-x-8 px-6" aria-label="Settings tabs">
+                {[
+                  { id: 'account', label: 'Account' },
+                  { id: 'notifications', label: 'Notifications' },
+                  { id: 'appearance', label: 'Appearance' },
+                  { id: 'data', label: 'Data & Privacy' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setSettingsTab(tab.id as any)}
+                    className={`
+                      py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200
+                      ${settingsTab === tab.id
+                        ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                        : 'border-transparent text-[var(--color-neutral-500)] hover:text-[var(--color-neutral-700)] hover:border-[var(--color-neutral-300)]'
+                      }
+                    `}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+            
+            <div className="p-6">
+              {settingsTab === 'account' && <AccountSettingsForm />}
+              {settingsTab === 'notifications' && <NotificationSettings />}
+              {settingsTab === 'appearance' && <ThemeSettings />}
+              {settingsTab === 'data' && <DataManagementSettings />}
+            </div>
+          </div>
+        </div>
+      </SettingsProvider>
+    );
+  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -296,21 +364,7 @@ const DashboardPage: React.FC = () => {
           </div>
         );
       case 'settings':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold text-[var(--color-neutral-900)]">Settings</h1>
-              <p className="text-[var(--color-neutral-600)] mt-2">
-                Manage your account preferences and settings.
-              </p>
-            </div>
-            <div className="bg-white rounded-lg p-8 shadow-sm border border-[var(--color-neutral-200)]">
-              <p className="text-center text-[var(--color-neutral-600)]">
-                Settings page will be implemented in future tasks.
-              </p>
-            </div>
-          </div>
-        );
+        return renderSettingsContent();
       default:
         return null;
     }
