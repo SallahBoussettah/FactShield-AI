@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AdminLayout from '../components/admin/AdminLayout';
 import AdminOverview from '../components/admin/AdminOverview';
+import UserManagement from '../components/admin/UserManagement';
 
 // This is a placeholder component for other admin sections
 // In a real implementation, these would be separate components
@@ -38,7 +39,7 @@ const AdminPage: React.FC = () => {
       case 'overview':
         return <AdminOverview />;
       case 'users':
-        return <AdminSectionPlaceholder section="user management" />;
+        return <UserManagement />;
       case 'content':
         return <AdminSectionPlaceholder section="content moderation" />;
       case 'analytics':
