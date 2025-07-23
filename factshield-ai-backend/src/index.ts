@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import multer from 'multer';
 
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
@@ -63,9 +64,11 @@ app.get('/health', (req, res) => {
 
 // Import routes
 import authRoutes from './routes/auth';
+import analysisRoutes from './routes/analysis';
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/analyze', analysisRoutes);
 
 app.get('/api', (req, res) => {
   res.json({
@@ -74,9 +77,63 @@ app.get('/api', (req, res) => {
     endpoints: {
       health: '/health',
       api: '/api',
-      auth: '/api/auth'
+      auth: '/api/auth',
+      analyze: '/api/analyze'
     }
   });
+});
+
+// Multer error handling middleware
+app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction): void => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'FILE_TOO_LARGE',
+          message: 'File size exceeds 10MB limit'
+        },
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+    if (error.code === 'LIMIT_FILE_COUNT') {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'TOO_MANY_FILES',
+          message: 'Only one file allowed per request'
+        },
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'UNEXPECTED_FILE',
+          message: 'Unexpected file field'
+        },
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+  }
+  
+  if (error.message && error.message.includes('Unsupported file type')) {
+    res.status(400).json({
+      success: false,
+      error: {
+        code: 'UNSUPPORTED_FILE_TYPE',
+        message: error.message
+      },
+      timestamp: new Date().toISOString()
+    });
+    return;
+  }
+  
+  next(error);
 });
 
 // Error handling middleware (must be last)
