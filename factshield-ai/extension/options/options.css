@@ -1,256 +1,82 @@
-/* Base styles */
-:root {
-  --primary-color: #4f46e5;
-  --secondary-color: #10b981;
-  --warning-color: #f59e0b;
-  --danger-color: #ef4444;
-  --neutral-50: #f9fafb;
-  --neutral-100: #f3f4f6;
-  --neutral-200: #e5e7eb;
-  --neutral-300: #d1d5db;
-  --neutral-400: #9ca3af;
-  --neutral-500: #6b7280;
-  --neutral-600: #4b5563;
-  --neutral-700: #374151;
-  --neutral-800: #1f2937;
-  --neutral-900: #111827;
-}
+/* Additional styles for FactShield AI Extension Options */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-}
-
-body {
-  background-color: var(--neutral-50);
-  color: var(--neutral-900);
-  line-height: 1.5;
-}
-
-.options-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-/* Header styles */
-.options-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 32px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--neutral-200);
-}
-
-.logo {
-  width: 48px;
-  height: 48px;
-}
-
-.options-header h1 {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--neutral-900);
-}
-
-/* Content styles */
-.options-content {
-  margin-bottom: 32px;
-}
-
-.options-section {
-  margin-bottom: 32px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 24px;
-}
-
-.options-section h2 {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: var(--neutral-800);
-}
-
-/* Option item styles */
-.option-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--neutral-100);
-}
-
-.option-item:last-child {
-  border-bottom: none;
-}
-
-.option-label {
-  flex: 1;
-}
-
-.option-label label {
-  font-weight: 500;
-  color: var(--neutral-800);
-}
-
-.option-description {
-  font-size: 14px;
-  color: var(--neutral-500);
-  margin-top: 4px;
-}
-
-.option-control {
-  margin-left: 16px;
-}
-
-/* Toggle switch styles */
-.toggle {
-  position: relative;
-  display: inline-block;
-  width: 48px;
-  height: 24px;
-}
-
-.toggle input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--neutral-300);
-  transition: .4s;
-  border-radius: 24px;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: .4s;
-  border-radius: 50%;
-}
-
-input:checked + .toggle-slider {
-  background-color: var(--primary-color);
-}
-
-input:focus + .toggle-slider {
-  box-shadow: 0 0 1px var(--primary-color);
-}
-
-input:checked + .toggle-slider:before {
-  transform: translateX(24px);
-}
-
-/* Text input styles */
-.text-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--neutral-300);
-  border-radius: 4px;
-  font-size: 14px;
-  color: var(--neutral-800);
-}
-
-.text-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
-}
-
-/* Account status styles */
-.account-status {
-  padding: 16px;
-  background-color: var(--neutral-100);
-  border-radius: 4px;
-  margin-top: 8px;
-}
-
-/* About section styles */
-.about-content {
-  font-size: 14px;
-  color: var(--neutral-600);
-}
-
-.about-content p {
-  margin-bottom: 8px;
-}
-
-.about-content a {
-  color: var(--primary-color);
-  text-decoration: none;
-}
-
-.about-content a:hover {
-  text-decoration: underline;
-}
-
-/* Button styles */
-.primary-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 10px 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.primary-btn:hover {
-  background-color: #4338ca;
-}
-
-.secondary-btn {
-  background-color: var(--neutral-100);
-  color: var(--neutral-800);
-  border: 1px solid var(--neutral-200);
-  border-radius: 4px;
-  padding: 10px 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-left: 8px;
-}
-
-.secondary-btn:hover {
-  background-color: var(--neutral-200);
-}
-
-/* Footer styles */
-.options-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 16px;
-  border-top: 1px solid var(--neutral-200);
-}
-
-/* Responsive styles */
-@media (max-width: 640px) {
-  .option-item {
-    flex-direction: column;
-    align-items: flex-start;
+/* Message animations */
+@keyframes slide-in {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
   }
-  
-  .option-control {
-    margin-left: 0;
-    margin-top: 8px;
-    width: 100%;
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
+}
+
+.message {
+  animation: slide-in 0.3s ease-out;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  margin-bottom: 0.5rem;
+}
+
+.message-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #065f46;
+  border-left: 4px solid #10b981;
+}
+
+.message-error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+  border-left: 4px solid #ef4444;
+}
+
+.message-info {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #1e40af;
+  border-left: 4px solid #3b82f6;
+}
+
+/* Dark mode styles */
+.theme-dark {
+  color-scheme: dark;
+  background-color: #1f2937;
+  color: #f9fafb;
+}
+
+.theme-dark .bg-white {
+  background-color: #111827;
+}
+
+.theme-dark .text-neutral-800 {
+  color: #f3f4f6;
+}
+
+.theme-dark .text-neutral-700 {
+  color: #e5e7eb;
+}
+
+.theme-dark .text-neutral-600 {
+  color: #d1d5db;
+}
+
+.theme-dark .text-neutral-500 {
+  color: #9ca3af;
+}
+
+.theme-dark .border-neutral-200 {
+  border-color: #374151;
+}
+
+.theme-dark .border-neutral-100 {
+  border-color: #1f2937;
+}
+
+.theme-dark .bg-neutral-100 {
+  background-color: #1f2937;
+}
+
+.theme-dark .hover\:bg-neutral-200:hover {
+  background-color: #374151;
 }

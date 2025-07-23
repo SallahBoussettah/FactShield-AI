@@ -1,3 +1,5 @@
+// FactShield AI Extension Options Script
+
 // DOM Elements
 const loginBtn = document.getElementById('login-btn');
 const registerBtn = document.getElementById('register-btn');
@@ -7,6 +9,7 @@ const resetBtn = document.getElementById('reset-btn');
 const loggedOutView = document.getElementById('logged-out-view');
 const loggedInView = document.getElementById('logged-in-view');
 const userEmail = document.getElementById('user-email');
+const messageContainer = document.getElementById('message-container');
 
 // Form elements
 const highlightClaims = document.getElementById('highlight-claims');
@@ -14,6 +17,8 @@ const autoAnalyze = document.getElementById('auto-analyze');
 const notificationsEnabled = document.getElementById('notifications-enabled');
 const apiEndpoint = document.getElementById('api-endpoint');
 const syncHistory = document.getElementById('sync-history');
+const accountLinking = document.getElementById('account-linking');
+const themeSelector = document.getElementById('theme-selector');
 
 // Default settings
 const defaultSettings = {
@@ -21,30 +26,87 @@ const defaultSettings = {
   autoAnalyze: false,
   notificationsEnabled: true,
   apiEndpoint: 'http://localhost:5173/api',
-  syncHistory: true
+  syncHistory: true,
+  accountLinking: true,
+  theme: 'system'
 };
 
-// Load settings and auth status when options page is opened
-document.addEventListener('DOMContentLoaded', async () => {
-  // Load settings
-  loadSettings();
+/**
+ * Shows a message notification
+ * @param {string} message - The message to display
+ * @param {string} type - The type of message (success, error, info)
+ */
+function showMessage(message, type = 'info') {
+  // Create message element
+  const messageElement = document.createElement('div');
+  
+  // Set classes based on message type
+  let bgColor, textColor, borderColor;
+  
+  switch (type) {
+    case 'success':
+      bgColor = 'bg-secondary/10';
+      textColor = 'text-secondary';
+      borderColor = 'border-l-secondary';
+      break;
+    case 'error':
+      bgColor = 'bg-danger/10';
+      textColor = 'text-danger';
+      borderColor = 'border-l-danger';
+      break;
+    default: // info
+      bgColor = 'bg-primary/10';
+      textColor = 'text-primary';
+      borderColor = 'border-l-primary';
+  }
+  
+  // Add classes to the message element
+  messageElement.className = `message ${bgColor} ${textColor} ${borderColor} py-3 px-4 rounded-md shadow-md border-l-4 mb-2`;
+  messageElement.textContent = message;
+  
+  // Add message to container
+  messageContainer.appendChild(messageElement);
+  
+  // Remove message after 3 seconds
+  setTimeout(() => {
+    messageElement.style.opacity = '0';
+    messageElement.style.transform = 'translateY(10px)';
+    messageElement.style.transition = 'opacity 0.3s, transform 0.3s';
+    
+    setTimeout(() => {
+      if (messageElement.parentNode) {
+        messageElement.remove();
+      }
+    }, 300);
+  }, 3000);
+}
 
-  // Check authentication status
-  checkAuthStatus();
-});
-
-// Function to load settings from storage
+/**
+ * Load settings from storage
+ */
 async function loadSettings() {
   try {
     const data = await chrome.storage.local.get('settings');
     const settings = data.settings || defaultSettings;
-
+    
     // Apply settings to form
     highlightClaims.checked = settings.highlightClaims;
     autoAnalyze.checked = settings.autoAnalyze;
     notificationsEnabled.checked = settings.notificationsEnabled;
     apiEndpoint.value = settings.apiEndpoint;
     syncHistory.checked = settings.syncHistory;
+    
+    // Apply new settings
+    if (settings.accountLinking !== undefined) {
+      accountLinking.checked = settings.accountLinking;
+    }
+    
+    if (settings.theme) {
+      themeSelector.value = settings.theme;
+    }
+    
+    // Apply theme
+    applyTheme(settings.theme || 'system');
   } catch (error) {
     console.error('Error loading settings:', error);
     // Apply default settings
@@ -52,7 +114,9 @@ async function loadSettings() {
   }
 }
 
-// Function to save settings to storage
+/**
+ * Save settings to storage
+ */
 async function saveSettings() {
   try {
     const settings = {
@@ -60,11 +124,16 @@ async function saveSettings() {
       autoAnalyze: autoAnalyze.checked,
       notificationsEnabled: notificationsEnabled.checked,
       apiEndpoint: apiEndpoint.value.trim(),
-      syncHistory: syncHistory.checked
+      syncHistory: syncHistory.checked,
+      accountLinking: accountLinking.checked,
+      theme: themeSelector.value
     };
-
+    
     await chrome.storage.local.set({ settings });
-
+    
+    // Apply theme
+    applyTheme(settings.theme);
+    
     // Show success message
     showMessage('Settings saved successfully!', 'success');
   } catch (error) {
@@ -73,70 +142,103 @@ async function saveSettings() {
   }
 }
 
-// Function to reset settings to defaults
+/**
+ * Reset settings to defaults
+ */
 function resetToDefaults() {
   // Apply default settings to form
   applySettings(defaultSettings);
-
+  
   // Show message
   showMessage('Settings reset to defaults. Click Save to apply.', 'info');
 }
 
-// Function to apply settings to form
+/**
+ * Apply settings to form
+ * @param {Object} settings - The settings to apply
+ */
 function applySettings(settings) {
   highlightClaims.checked = settings.highlightClaims;
   autoAnalyze.checked = settings.autoAnalyze;
   notificationsEnabled.checked = settings.notificationsEnabled;
   apiEndpoint.value = settings.apiEndpoint;
   syncHistory.checked = settings.syncHistory;
+  accountLinking.checked = settings.accountLinking !== undefined ? settings.accountLinking : true;
+  themeSelector.value = settings.theme || 'system';
 }
 
-// Function to check authentication status
+/**
+ * Apply theme based on selection
+ * @param {string} theme - The theme to apply (system, light, dark)
+ */
+function applyTheme(theme) {
+  const htmlElement = document.documentElement;
+  
+  // Remove existing theme classes
+  htmlElement.classList.remove('theme-light', 'theme-dark');
+  
+  if (theme === 'system') {
+    // Check system preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      htmlElement.classList.add('theme-dark');
+    } else {
+      htmlElement.classList.add('theme-light');
+    }
+  } else {
+    // Apply selected theme
+    htmlElement.classList.add(`theme-${theme}`);
+  }
+}
+
+/**
+ * Check authentication status
+ */
 async function checkAuthStatus() {
   try {
     const authData = await chrome.storage.local.get(['authToken', 'userData']);
-
+    
     if (authData.authToken && authData.userData) {
       // User is logged in
       userEmail.textContent = authData.userData.email || 'user@example.com';
-      loggedOutView.style.display = 'none';
-      loggedInView.style.display = 'block';
+      loggedOutView.classList.add('hidden');
+      loggedInView.classList.remove('hidden');
     } else {
       // User is not logged in
-      loggedOutView.style.display = 'block';
-      loggedInView.style.display = 'none';
+      loggedOutView.classList.remove('hidden');
+      loggedInView.classList.add('hidden');
     }
   } catch (error) {
     console.error('Error checking auth status:', error);
     // Assume not logged in
-    loggedOutView.style.display = 'block';
-    loggedInView.style.display = 'none';
+    loggedOutView.classList.remove('hidden');
+    loggedInView.classList.add('hidden');
   }
 }
 
-// Function to show message
-function showMessage(message, type = 'info') {
-  // Remove existing message if any
-  const existingMessage = document.querySelector('.message');
-  if (existingMessage) {
-    existingMessage.remove();
+/**
+ * Generate device linking code
+ * @returns {string} A random 6-character code
+ */
+function generateLinkingCode() {
+  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar-looking characters
+  let code = '';
+  
+  for (let i = 0; i < 6; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    code += characters.charAt(randomIndex);
   }
-
-  // Create message element
-  const messageElement = document.createElement('div');
-  messageElement.className = `message message-${type}`;
-  messageElement.textContent = message;
-
-  // Add message to page
-  document.querySelector('.options-container').appendChild(messageElement);
-
-  // Remove message after 3 seconds
-  setTimeout(() => {
-    if (messageElement.parentNode) {
-      messageElement.remove();
-    }
-  }, 3000);
+  
+  return code;
 }
+
+// Initialize options page
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load settings
+  await loadSettings();
+  
+  // Check authentication status
+  await checkAuthStatus();
+});
 
 // Event listeners
 loginBtn.addEventListener('click', () => {
@@ -153,11 +255,11 @@ logoutBtn.addEventListener('click', async () => {
   try {
     // Clear auth data
     await chrome.storage.local.remove(['authToken', 'userData']);
-
+    
     // Update UI
-    loggedInView.style.display = 'none';
-    loggedOutView.style.display = 'block';
-
+    loggedInView.classList.add('hidden');
+    loggedOutView.classList.remove('hidden');
+    
     // Show message
     showMessage('Logged out successfully.', 'success');
   } catch (error) {
@@ -169,47 +271,8 @@ logoutBtn.addEventListener('click', async () => {
 saveBtn.addEventListener('click', saveSettings);
 resetBtn.addEventListener('click', resetToDefaults);
 
-// Add CSS for messages
-const style = document.createElement('style');
-style.textContent = `
-  .message {
-    position: fixed;
-    bottom: 16px;
-    right: 16px;
-    padding: 12px 16px;
-    border-radius: 4px;
-    font-size: 14px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    animation: slide-in 0.3s ease-out;
-  }
-  
-  @keyframes slide-in {
-    from {
-      transform: translateY(20px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-  
-  .message-success {
-    background-color: #ecfdf5;
-    color: #065f46;
-    border-left: 4px solid #10b981;
-  }
-  
-  .message-error {
-    background-color: #fee2e2;
-    color: #b91c1c;
-    border-left: 4px solid #ef4444;
-  }
-  
-  .message-info {
-    background-color: #eff6ff;
-    color: #1e40af;
-    border-left: 4px solid #3b82f6;
-  }
-`;
-document.head.appendChild(style);
+// Theme selector change event
+themeSelector.addEventListener('change', () => {
+  // Apply theme immediately for preview
+  applyTheme(themeSelector.value);
+});

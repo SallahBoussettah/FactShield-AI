@@ -146,36 +146,38 @@
 
 ## Browser Extension Implementation
 
-- [x] 8. Extension Setup
-
-
-
+- [x] 8. Extension Setup 
   - Create extension project structure with Manifest V3
   - Set up build process for extension
   - Configure permissions and security policies
   - _Requirements: 5.1_
 
-- [ ] 9. Extension UI Components
-  - [ ] 9.1 Create popup interface
-    - Implement extension popup with Tailwind CSS
+- [x] 9. Extension UI Components / Analyze first
+
+
+  - [x] 9.1 Create popup interface
+    - Implement extension popup with Tailwind CSS V4
     - Add login/logout functionality
     - Create quick analysis form
     - _Requirements: 5.1, 5.4_
   
-  - [ ] 9.2 Build options page
+  - [-] 9.2 Build options page / Analyze first since its already implemented just take off the dark theme i only wanna use light
+
+
+
     - Create settings interface for extension
     - Implement account linking
     - Add customization options
     - _Requirements: 5.5_
 
-- [ ] 10. Content Analysis Integration
+- [ ] 10. Content Analysis Integration / Analyze first
   - [ ] 10.1 Implement content scripts
     - Create scripts to analyze page content
     - Add DOM manipulation for highlighting claims
     - Implement throttling for performance
     - _Requirements: 5.2, 5.3_
   
-  - [ ] 10.2 Build background service worker
+  - [ ] 10.2 Build background service worker / Analyze first
     - Create service worker for API communication
     - Implement caching for analyzed pages
     - Add notification system
