@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import type { HistoryItem } from '../../types/history';
 import * as historyService from '../../services/historyService';
@@ -133,10 +132,13 @@ const RecentActivity: React.FC = () => {
             <h3 className="text-lg font-semibold text-[var(--color-neutral-900)] mb-4">Recent Activity</h3>
             <div className="space-y-4">
                 {recentItems.map((item) => (
-                    <Link
+                    <div
                         key={item.id}
-                        to={`/history?item=${item.id}`}
-                        className="flex items-start p-3 rounded-lg border border-[var(--color-neutral-200)] hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/5 transition-all duration-200"
+                        onClick={() => {
+                            // Use window.dispatchEvent to communicate with the DashboardPage
+                            window.dispatchEvent(new CustomEvent('viewHistoryItem', { detail: item }));
+                        }}
+                        className="flex items-start p-3 rounded-lg border border-[var(--color-neutral-200)] hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/5 transition-all duration-200 cursor-pointer"
                     >
                         <div className="p-2 bg-[var(--color-neutral-100)] rounded-lg mr-3 flex-shrink-0">
                             <div className="text-[var(--color-neutral-600)]">
@@ -180,15 +182,18 @@ const RecentActivity: React.FC = () => {
                                 </span>
                             </div>
                         </div>
-                    </Link>
+                    </div>
                 ))}
 
-                <Link
-                    to="/history"
-                    className="block text-center text-sm text-[var(--color-primary)] hover:text-[var(--color-primary)]/80 font-medium mt-2"
+                <button
+                    onClick={() => {
+                        // Use window.dispatchEvent to communicate with the DashboardPage
+                        window.dispatchEvent(new CustomEvent('viewAllHistory'));
+                    }}
+                    className="block w-full text-center text-sm text-[var(--color-primary)] hover:text-[var(--color-primary)]/80 font-medium mt-2"
                 >
                     View all history
-                </Link>
+                </button>
             </div>
         </div>
     );

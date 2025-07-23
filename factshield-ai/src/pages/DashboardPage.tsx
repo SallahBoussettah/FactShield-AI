@@ -1,17 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import ContentUpload from '../components/dashboard/ContentUpload';
 import UrlAnalysis from '../components/dashboard/UrlAnalysis';
 import AnalysisResults from '../components/dashboard/AnalysisResults';
 import RecentActivity from '../components/dashboard/RecentActivity';
+import HistoryFilters from '../components/history/HistoryFilters';
+import HistoryList from '../components/history/HistoryList';
+import HistoryDetail from '../components/history/HistoryDetail';
+import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
 import type { AnalysisResult } from '../types/upload';
+import type { HistoryItem, HistoryFilter, PaginationState } from '../types/history';
+import * as historyService from '../services/historyService';
 
 const DashboardPage: React.FC = () => {
   const { authState } = useAuth();
   const [activeSection, setActiveSection] = useState('overview');
   const [analysisTab, setAnalysisTab] = useState<'upload' | 'url'>('upload');
   const [currentAnalysisResult, setCurrentAnalysisResult] = useState<AnalysisResult | null>(null);
+  
+  // History state
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+  const [historyAnalysisResults, setHistoryAnalysisResults] = useState<AnalysisResult | null>(null);
+  const [historyFilters, setHistoryFilters] = useState<HistoryFilter>({});
+  const [historyPagination, setHistoryPagination] = useState<PaginationState>({
+    currentPage: 1,
+    itemsPerPage: 10,
+    totalItems: 0,
+    totalPages: 0
+  });
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [isHistoryResultsLoading, setIsHistoryResultsLoading] = useState(false);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -227,8 +247,6 @@ const DashboardPage: React.FC = () => {
           </div>
         );
       case 'history':
-        // Redirect to the history page
-        window.location.href = '/history';
         return (
           <div className="space-y-6">
             <div>
@@ -237,11 +255,44 @@ const DashboardPage: React.FC = () => {
                 View your past fact-checking analyses and results.
               </p>
             </div>
-            <div className="bg-white rounded-lg p-8 shadow-sm border border-[var(--color-neutral-200)]">
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
-              </div>
+            
+            {selectedItem ? (
+              <HistoryDetail
+                historyItem={selectedItem}
+                analysisResults={historyAnalysisResults}
+                isLoading={isHistoryResultsLoading}
+                onBack={handleBackToList}
+              />
+            ) : (
+              <>
+                <HistoryFilters
+                  onFilterChange={handleHistoryFilterChange}
+                  initialFilters={historyFilters}
+                />
+                
+                <HistoryList
+                  items={historyItems}
+                  pagination={historyPagination}
+                  onPageChange={handleHistoryPageChange}
+                  onViewItem={handleViewHistoryItem}
+                  onDeleteItem={handleDeleteHistoryItem}
+                  isLoading={isHistoryLoading}
+                />
+              </>
+            )}
+          </div>
+        );
+      case 'analytics':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--color-neutral-900)]">Analytics Dashboard</h1>
+              <p className="text-[var(--color-neutral-600)] mt-2">
+                View insights and trends from your fact-checking analyses.
+              </p>
             </div>
+            
+            <AnalyticsDashboard />
           </div>
         );
       case 'settings':
@@ -263,6 +314,115 @@ const DashboardPage: React.FC = () => {
       default:
         return null;
     }
+  };
+
+  // History functions
+  // Load history items
+  const loadHistoryItems = async () => {
+    if (!authState.user) return;
+    
+    setIsHistoryLoading(true);
+    try {
+      const result = await historyService.getUserHistory(
+        authState.user.id,
+        historyPagination.currentPage,
+        historyPagination.itemsPerPage,
+        historyFilters
+      );
+      
+      setHistoryItems(result.items);
+      setHistoryPagination(result.pagination);
+    } catch (error) {
+      console.error('Error loading history:', error);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+  
+  // Load history on mount and when filters or pagination change
+  useEffect(() => {
+    if (activeSection === 'history') {
+      loadHistoryItems();
+    }
+  }, [authState.user, historyPagination.currentPage, historyFilters, activeSection]);
+  
+  // Handle custom events from RecentActivity component
+  useEffect(() => {
+    const handleViewHistoryItemEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<HistoryItem>;
+      setActiveSection('history');
+      // Use the existing function to view the history item
+      handleViewHistoryItem(customEvent.detail);
+    };
+    
+    const handleViewAllHistory = () => {
+      setActiveSection('history');
+    };
+    
+    window.addEventListener('viewHistoryItem', handleViewHistoryItemEvent);
+    window.addEventListener('viewAllHistory', handleViewAllHistory);
+    
+    return () => {
+      window.removeEventListener('viewHistoryItem', handleViewHistoryItemEvent);
+      window.removeEventListener('viewAllHistory', handleViewAllHistory);
+    };
+  }, []);
+  
+  // Handle page change
+  const handleHistoryPageChange = (page: number) => {
+    setHistoryPagination(prev => ({
+      ...prev,
+      currentPage: page
+    }));
+  };
+  
+  // Handle filter change
+  const handleHistoryFilterChange = (newFilters: HistoryFilter) => {
+    setHistoryFilters(newFilters);
+    // Reset to first page when filters change
+    setHistoryPagination(prev => ({
+      ...prev,
+      currentPage: 1
+    }));
+  };
+  
+  // View history item details
+  const handleViewHistoryItem = async (item: HistoryItem) => {
+    setSelectedItem(item);
+    setIsHistoryResultsLoading(true);
+    
+    try {
+      const results = await historyService.getHistoryItemResults(item.analysisId);
+      setHistoryAnalysisResults(results);
+    } catch (error) {
+      console.error('Error loading analysis results:', error);
+      setHistoryAnalysisResults(null);
+    } finally {
+      setIsHistoryResultsLoading(false);
+    }
+  };
+  
+  // Delete history item
+  const handleDeleteHistoryItem = async (item: HistoryItem) => {
+    try {
+      await historyService.deleteHistoryItem(item.id);
+      // Refresh the list
+      loadHistoryItems();
+      
+      // If the deleted item was selected, go back to the list
+      if (selectedItem && selectedItem.id === item.id) {
+        setSelectedItem(null);
+        setHistoryAnalysisResults(null);
+      }
+    } catch (error) {
+      console.error('Error deleting history item:', error);
+    }
+  };
+  
+  // Go back to history list
+  const handleBackToList = () => {
+    setSelectedItem(null);
+    setHistoryAnalysisResults(null);
   };
 
   return (
