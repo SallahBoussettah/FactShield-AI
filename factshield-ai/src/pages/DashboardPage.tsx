@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
+import ContentUpload from '../components/dashboard/ContentUpload';
+import UrlAnalysis from '../components/dashboard/UrlAnalysis';
 
 const DashboardPage: React.FC = () => {
   const { authState } = useAuth();
   const [activeSection, setActiveSection] = useState('overview');
+  const [analysisTab, setAnalysisTab] = useState<'upload' | 'url'>('upload');
 
   const renderContent = () => {
     switch (activeSection) {
@@ -91,7 +94,10 @@ const DashboardPage: React.FC = () => {
               <div className="bg-white rounded-xl p-6 shadow-sm border border-[var(--color-neutral-200)]">
                 <h3 className="text-lg font-semibold text-[var(--color-neutral-900)] mb-4">Quick Actions</h3>
                 <div className="space-y-3">
-                  <button className="w-full flex items-center p-3 text-left rounded-lg border border-[var(--color-neutral-200)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-all duration-200">
+                  <button
+                    onClick={() => setActiveSection('analyze')}
+                    className="w-full flex items-center p-3 text-left rounded-lg border border-[var(--color-neutral-200)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-all duration-200"
+                  >
                     <div className="p-2 bg-[var(--color-primary)]/10 rounded-lg mr-3">
                       <svg className="w-5 h-5 text-[var(--color-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -103,7 +109,13 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </button>
 
-                  <button className="w-full flex items-center p-3 text-left rounded-lg border border-[var(--color-neutral-200)] hover:border-[var(--color-secondary)] hover:bg-[var(--color-secondary)]/5 transition-all duration-200">
+                  <button
+                    onClick={() => {
+                      setActiveSection('analyze');
+                      setAnalysisTab('url');
+                    }}
+                    className="w-full flex items-center p-3 text-left rounded-lg border border-[var(--color-neutral-200)] hover:border-[var(--color-secondary)] hover:bg-[var(--color-secondary)]/5 transition-all duration-200"
+                  >
                     <div className="p-2 bg-[var(--color-secondary)]/10 rounded-lg mr-3">
                       <svg className="w-5 h-5 text-[var(--color-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -141,9 +153,73 @@ const DashboardPage: React.FC = () => {
                 Upload documents or analyze URLs for fact-checking.
               </p>
             </div>
-            <div className="bg-white rounded-lg p-8 shadow-sm border border-[var(--color-neutral-200)]">
-              <p className="text-center text-[var(--color-neutral-600)]">
-                Content analysis tools will be implemented in the next tasks.
+
+            {/* Analysis Options Tabs */}
+            <div className="bg-white rounded-lg shadow-sm border border-[var(--color-neutral-200)]">
+              <div className="border-b border-[var(--color-neutral-200)]">
+                <nav className="flex space-x-8 px-6" aria-label="Analysis options">
+                  <button
+                    onClick={() => setAnalysisTab('upload')}
+                    className={`
+                      py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200
+                      ${analysisTab === 'upload'
+                        ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                        : 'border-transparent text-[var(--color-neutral-500)] hover:text-[var(--color-neutral-700)] hover:border-[var(--color-neutral-300)]'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      Upload Documents
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setAnalysisTab('url')}
+                    className={`
+                      py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200
+                      ${analysisTab === 'url'
+                        ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                        : 'border-transparent text-[var(--color-neutral-500)] hover:text-[var(--color-neutral-700)] hover:border-[var(--color-neutral-300)]'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      Analyze URLs
+                    </div>
+                  </button>
+                </nav>
+              </div>
+
+              <div className="p-6">
+                {analysisTab === 'upload' ? (
+                  <ContentUpload
+                    onFileAnalyzed={(fileId, results) => {
+                      console.log('File analyzed:', fileId, results);
+                      // TODO: Handle analysis results in future tasks
+                    }}
+                  />
+                ) : (
+                  <UrlAnalysis
+                    onUrlAnalyzed={(url, results) => {
+                      console.log('URL analyzed:', url, results);
+                      // TODO: Handle analysis results in future tasks
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Demo section for testing */}
+            <div className="bg-[var(--color-neutral-50)] rounded-lg p-4 border border-[var(--color-neutral-200)]">
+              <p className="text-sm text-[var(--color-neutral-600)]">
+                <strong>Demo Note:</strong> Both upload and URL analysis components are now functional. 
+                The upload component supports drag-and-drop with file validation, and the URL analysis 
+                form includes proper validation and error handling. Try both tabs to test the functionality!
               </p>
             </div>
           </div>
