@@ -161,10 +161,7 @@
     - Create quick analysis form
     - _Requirements: 5.1, 5.4_
   
-  - [-] 9.2 Build options page / Analyze first since its already implemented just take off the dark theme i only wanna use light
-
-
-
+  - [x] 9.2 Build options page / Analyze first since its already implemented just take off the dark theme i only wanna use light
     - Create settings interface for extension
     - Implement account linking
     - Add customization options

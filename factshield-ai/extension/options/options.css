@@ -38,45 +38,9 @@
   border-left: 4px solid #3b82f6;
 }
 
-/* Dark mode styles */
-.theme-dark {
-  color-scheme: dark;
-  background-color: #1f2937;
-  color: #f9fafb;
-}
-
-.theme-dark .bg-white {
-  background-color: #111827;
-}
-
-.theme-dark .text-neutral-800 {
-  color: #f3f4f6;
-}
-
-.theme-dark .text-neutral-700 {
-  color: #e5e7eb;
-}
-
-.theme-dark .text-neutral-600 {
-  color: #d1d5db;
-}
-
-.theme-dark .text-neutral-500 {
-  color: #9ca3af;
-}
-
-.theme-dark .border-neutral-200 {
-  border-color: #374151;
-}
-
-.theme-dark .border-neutral-100 {
-  border-color: #1f2937;
-}
-
-.theme-dark .bg-neutral-100 {
-  background-color: #1f2937;
-}
-
-.theme-dark .hover\:bg-neutral-200:hover {
-  background-color: #374151;
+/* Light theme is the only theme */
+.theme-light {
+  color-scheme: light;
+  background-color: var(--neutral-50);
+  color: var(--neutral-900);
 }

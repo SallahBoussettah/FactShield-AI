@@ -16,7 +16,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     return true; // Required for async response
   }
-  
+
   if (message.action === 'analyzeSelection') {
     analyzeSelection()
       .then(status => sendResponse(status))
@@ -26,7 +26,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     return true; // Required for async response
   }
-  
+
   if (message.action === 'analysisResults') {
     handleAnalysisResults(message.results);
     sendResponse({ status: 'received' });
@@ -39,14 +39,14 @@ async function analyzePage() {
   if (isAnalyzing) {
     return;
   }
-  
+
   isAnalyzing = true;
   showAnalysisIndicator();
-  
+
   try {
     // Extract main content from the page
     const content = extractPageContent();
-    
+
     // Send content to background script for analysis
     chrome.runtime.sendMessage({
       action: 'analyzeContent',
@@ -64,24 +64,24 @@ async function analyzeSelection() {
   if (isAnalyzing) {
     return { status: 'analyzing' };
   }
-  
+
   const selection = window.getSelection();
   const selectedText = selection.toString().trim();
-  
+
   if (!selectedText) {
     return { status: 'noSelection' };
   }
-  
+
   isAnalyzing = true;
   showAnalysisIndicator();
-  
+
   try {
     // Send selected text to background script for analysis
     chrome.runtime.sendMessage({
       action: 'analyzeContent',
       content: selectedText
     });
-    
+
     return { status: 'analyzing' };
   } catch (error) {
     isAnalyzing = false;
@@ -94,7 +94,7 @@ async function analyzeSelection() {
 function extractPageContent() {
   // Simple content extraction strategy
   // This could be improved with more sophisticated algorithms
-  
+
   // Try to find main content containers
   const contentSelectors = [
     'article',
@@ -105,9 +105,9 @@ function extractPageContent() {
     '#content',
     '#main'
   ];
-  
+
   let content = '';
-  
+
   // Try each selector
   for (const selector of contentSelectors) {
     const elements = document.querySelectorAll(selector);
@@ -118,12 +118,12 @@ function extractPageContent() {
       break;
     }
   }
-  
+
   // If no content found with selectors, use body text
   if (!content.trim()) {
     content = document.body.innerText;
   }
-  
+
   return content.trim();
 }
 
@@ -131,15 +131,15 @@ function extractPageContent() {
 function handleAnalysisResults(results) {
   isAnalyzing = false;
   hideAnalysisIndicator();
-  
+
   if (!results || results.error) {
     showNotification('Error analyzing content', 'error');
     return;
   }
-  
+
   // Clear previous highlights
   clearHighlights();
-  
+
   // Process claims if available
   if (results.claims && results.claims.length > 0) {
     highlightClaims(results.claims);
@@ -159,7 +159,7 @@ function highlightClaims(claims) {
     null,
     false
   );
-  
+
   let node;
   while (node = walker.nextNode()) {
     // Skip empty nodes and nodes in script/style tags
@@ -170,27 +170,27 @@ function highlightClaims(claims) {
       textNodes.push(node);
     }
   }
-  
+
   // For each claim, find and highlight occurrences in text nodes
   claims.forEach(claim => {
     const claimText = claim.text;
     if (!claimText) return;
-    
+
     textNodes.forEach(textNode => {
       const nodeText = textNode.nodeValue;
       const index = nodeText.indexOf(claimText);
-      
+
       if (index >= 0) {
         // Split the text node and insert a highlight
         const before = nodeText.substring(0, index);
         const after = nodeText.substring(index + claimText.length);
-        
+
         const span = document.createElement('span');
         span.className = 'factshield-highlight';
         span.textContent = claimText;
         span.dataset.claimId = claim.id;
         span.dataset.credibilityScore = claim.credibilityScore || 'unknown';
-        
+
         // Set highlight color based on credibility score
         if (claim.credibilityScore !== undefined) {
           if (claim.credibilityScore < 0.3) {
@@ -201,12 +201,12 @@ function highlightClaims(claims) {
             span.classList.add('factshield-high-credibility');
           }
         }
-        
+
         // Add click event to show details
         span.addEventListener('click', () => {
           showClaimDetails(claim);
         });
-        
+
         // Replace the text node with the new elements
         const fragment = document.createDocumentFragment();
         if (before) {
@@ -216,7 +216,7 @@ function highlightClaims(claims) {
         if (after) {
           fragment.appendChild(document.createTextNode(after));
         }
-        
+
         textNode.parentNode.replaceChild(fragment, textNode);
         highlightedElements.push(span);
       }
@@ -231,16 +231,16 @@ function showClaimDetails(claim) {
   if (existingPopup) {
     existingPopup.remove();
   }
-  
+
   // Create popup element
   const popup = document.createElement('div');
   popup.id = 'factshield-detail-popup';
   popup.className = 'factshield-popup';
-  
+
   // Create popup content
   let credibilityClass = 'unknown';
   let credibilityText = 'Unknown';
-  
+
   if (claim.credibilityScore !== undefined) {
     if (claim.credibilityScore < 0.3) {
       credibilityClass = 'low';
@@ -253,7 +253,7 @@ function showClaimDetails(claim) {
       credibilityText = 'High Credibility';
     }
   }
-  
+
   // Build sources HTML if available
   let sourcesHtml = '';
   if (claim.sources && claim.sources.length > 0) {
@@ -263,7 +263,7 @@ function showClaimDetails(claim) {
     });
     sourcesHtml += '</ul>';
   }
-  
+
   popup.innerHTML = `
     <div class="factshield-popup-header">
       <h2>FactShield AI Analysis</h2>
@@ -282,36 +282,36 @@ function showClaimDetails(claim) {
       <a href="http://localhost:5173" target="_blank">Powered by FactShield AI</a>
     </div>
   `;
-  
+
   // Add close button functionality
   popup.querySelector('.factshield-close-btn').addEventListener('click', () => {
     popup.remove();
   });
-  
+
   // Add popup to page
   document.body.appendChild(popup);
-  
+
   // Position popup near the mouse
   const mouseX = window.event ? window.event.clientX : 200;
   const mouseY = window.event ? window.event.clientY : 200;
-  
+
   const popupWidth = popup.offsetWidth;
   const popupHeight = popup.offsetHeight;
   const windowWidth = window.innerWidth;
   const windowHeight = window.innerHeight;
-  
+
   let left = mouseX + 10;
   let top = mouseY + 10;
-  
+
   // Adjust position if popup would go off screen
   if (left + popupWidth > windowWidth) {
     left = windowWidth - popupWidth - 10;
   }
-  
+
   if (top + popupHeight > windowHeight) {
     top = windowHeight - popupHeight - 10;
   }
-  
+
   popup.style.left = `${left}px`;
   popup.style.top = `${top}px`;
 }
@@ -328,7 +328,7 @@ function clearHighlights() {
       element.parentNode.replaceChild(textNode, element);
     }
   });
-  
+
   highlightedElements = [];
 }
 
@@ -339,7 +339,7 @@ function showAnalysisIndicator() {
   if (existingIndicator) {
     existingIndicator.remove();
   }
-  
+
   // Create indicator element
   const indicator = document.createElement('div');
   indicator.id = 'factshield-indicator';
@@ -350,7 +350,7 @@ function showAnalysisIndicator() {
       <p>FactShield AI is analyzing this content...</p>
     </div>
   `;
-  
+
   // Add indicator to page
   document.body.appendChild(indicator);
 }
@@ -370,7 +370,7 @@ function showNotification(message, type = 'info') {
   if (existingNotification) {
     existingNotification.remove();
   }
-  
+
   // Create notification element
   const notification = document.createElement('div');
   notification.id = 'factshield-notification';
@@ -380,10 +380,10 @@ function showNotification(message, type = 'info') {
       <p>${message}</p>
     </div>
   `;
-  
+
   // Add notification to page
   document.body.appendChild(notification);
-  
+
   // Remove notification after 5 seconds
   setTimeout(() => {
     if (notification.parentNode) {

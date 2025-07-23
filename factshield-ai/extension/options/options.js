@@ -18,7 +18,6 @@ const notificationsEnabled = document.getElementById('notifications-enabled');
 const apiEndpoint = document.getElementById('api-endpoint');
 const syncHistory = document.getElementById('sync-history');
 const accountLinking = document.getElementById('account-linking');
-const themeSelector = document.getElementById('theme-selector');
 
 // Default settings
 const defaultSettings = {
@@ -27,8 +26,7 @@ const defaultSettings = {
   notificationsEnabled: true,
   apiEndpoint: 'http://localhost:5173/api',
   syncHistory: true,
-  accountLinking: true,
-  theme: 'system'
+  accountLinking: true
 };
 
 /**
@@ -101,12 +99,8 @@ async function loadSettings() {
       accountLinking.checked = settings.accountLinking;
     }
     
-    if (settings.theme) {
-      themeSelector.value = settings.theme;
-    }
-    
-    // Apply theme
-    applyTheme(settings.theme || 'system');
+    // Apply light theme
+    applyTheme();
   } catch (error) {
     console.error('Error loading settings:', error);
     // Apply default settings
@@ -125,14 +119,13 @@ async function saveSettings() {
       notificationsEnabled: notificationsEnabled.checked,
       apiEndpoint: apiEndpoint.value.trim(),
       syncHistory: syncHistory.checked,
-      accountLinking: accountLinking.checked,
-      theme: themeSelector.value
+      accountLinking: accountLinking.checked
     };
     
     await chrome.storage.local.set({ settings });
     
-    // Apply theme
-    applyTheme(settings.theme);
+    // Apply light theme
+    applyTheme();
     
     // Show success message
     showMessage('Settings saved successfully!', 'success');
@@ -164,30 +157,17 @@ function applySettings(settings) {
   apiEndpoint.value = settings.apiEndpoint;
   syncHistory.checked = settings.syncHistory;
   accountLinking.checked = settings.accountLinking !== undefined ? settings.accountLinking : true;
-  themeSelector.value = settings.theme || 'system';
 }
 
 /**
- * Apply theme based on selection
- * @param {string} theme - The theme to apply (system, light, dark)
+ * Apply light theme
  */
-function applyTheme(theme) {
+function applyTheme() {
   const htmlElement = document.documentElement;
   
-  // Remove existing theme classes
-  htmlElement.classList.remove('theme-light', 'theme-dark');
-  
-  if (theme === 'system') {
-    // Check system preference
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      htmlElement.classList.add('theme-dark');
-    } else {
-      htmlElement.classList.add('theme-light');
-    }
-  } else {
-    // Apply selected theme
-    htmlElement.classList.add(`theme-${theme}`);
-  }
+  // Always use light theme
+  htmlElement.classList.remove('theme-dark');
+  htmlElement.classList.add('theme-light');
 }
 
 /**
@@ -270,9 +250,3 @@ logoutBtn.addEventListener('click', async () => {
 
 saveBtn.addEventListener('click', saveSettings);
 resetBtn.addEventListener('click', resetToDefaults);
-
-// Theme selector change event
-themeSelector.addEventListener('change', () => {
-  // Apply theme immediately for preview
-  applyTheme(themeSelector.value);
-});
