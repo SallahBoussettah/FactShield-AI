@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { AnalysisResult, Claim, Source } from '../../types/upload';
+import type { AnalysisResult, Source } from '../../types/upload';
 
 interface AnalysisResultsProps {
   results: AnalysisResult | null;

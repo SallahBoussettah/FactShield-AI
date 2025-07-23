@@ -4,6 +4,7 @@ import DashboardLayout from '../components/dashboard/DashboardLayout';
 import ContentUpload from '../components/dashboard/ContentUpload';
 import UrlAnalysis from '../components/dashboard/UrlAnalysis';
 import AnalysisResults from '../components/dashboard/AnalysisResults';
+import RecentActivity from '../components/dashboard/RecentActivity';
 import type { AnalysisResult } from '../types/upload';
 
 const DashboardPage: React.FC = () => {
@@ -132,18 +133,7 @@ const DashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-[var(--color-neutral-200)]">
-                <h3 className="text-lg font-semibold text-[var(--color-neutral-900)] mb-4">Recent Activity</h3>
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-[var(--color-neutral-100)] rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-[var(--color-neutral-400)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-[var(--color-neutral-600)] mb-2">No analyses yet</p>
-                  <p className="text-sm text-[var(--color-neutral-500)]">Start by analyzing your first piece of content</p>
-                </div>
-              </div>
+              <RecentActivity />
             </div>
           </div>
         );
@@ -237,6 +227,8 @@ const DashboardPage: React.FC = () => {
           </div>
         );
       case 'history':
+        // Redirect to the history page
+        window.location.href = '/history';
         return (
           <div className="space-y-6">
             <div>
@@ -246,9 +238,9 @@ const DashboardPage: React.FC = () => {
               </p>
             </div>
             <div className="bg-white rounded-lg p-8 shadow-sm border border-[var(--color-neutral-200)]">
-              <p className="text-center text-[var(--color-neutral-600)]">
-                History functionality will be implemented in future tasks.
-              </p>
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
+              </div>
             </div>
           </div>
         );
