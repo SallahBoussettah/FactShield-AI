@@ -172,16 +172,12 @@
 
 
   - [x] 10.1 Implement content scripts
-
-
     - Create scripts to analyze page content
     - Add DOM manipulation for highlighting claims
     - Implement throttling for performance
     - _Requirements: 5.2, 5.3_
   
-
-
-  - [ ] 10.2 Build background service worker / Analyze first
+  - [x] 10.2 Build background service worker / Analyze first if its implemented dont change it just mark the task done
     - Create service worker for API communication
     - Implement caching for analyzed pages
     - Add notification system
@@ -192,7 +188,7 @@
 - [ ] 11. Backend Project Setup
   - Set up Node.js/Express project
   - Configure TypeScript and project structure
-  - Set up database connection with PostgreSQL
+  - Set up database connection with PostgreSQL / Password = "SATOSANb6..."
   - Implement basic middleware (logging, CORS, etc.)
   - _Requirements: 6.1_
 
