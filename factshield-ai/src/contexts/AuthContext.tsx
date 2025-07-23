@@ -109,8 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       scheduleTokenRefresh(response.token);
       
       return response;
-    } catch (error) {
-      console.error('Token refresh failed:', error);
+    } catch {
       // Clear authentication on refresh failure
       clearAuthData();
       dispatch({ type: 'LOGOUT' });
@@ -218,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
-      const { confirmPassword, ...registerData } = formData;
+      const { confirmPassword: _, ...registerData } = formData;
       await authService.register(registerData);
       
       dispatch({ type: 'REGISTER_SUCCESS' });

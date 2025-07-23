@@ -190,7 +190,7 @@ const AdminAnalytics: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-lg font-semibold text-[var(--color-neutral-900)] mb-4">Requests Over Time</h2>
         <div className="h-80">
-          <LineChart 
+          <LineChart
             data={mockAnalyticsData.requestsOverTime}
             xKey="date"
             yKey="count"
@@ -206,7 +206,7 @@ const AdminAnalytics: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-[var(--color-neutral-900)] mb-4">Content Type Distribution</h2>
           <div className="h-64">
-            <PieChart 
+            <PieChart
               data={mockAnalyticsData.contentTypeDistribution}
               nameKey="type"
               valueKey="percentage"
@@ -216,7 +216,7 @@ const AdminAnalytics: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-[var(--color-neutral-900)] mb-4">Accuracy by Content Type</h2>
           <div className="h-64">
-            <BarChart 
+            <BarChart
               data={mockAnalyticsData.accuracyByContentType}
               xKey="type"
               yKey="accuracy"
@@ -232,7 +232,7 @@ const AdminAnalytics: React.FC = () => {
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-lg font-semibold text-[var(--color-neutral-900)] mb-4">User Activity by Hour</h2>
         <div className="h-80">
-          <BarChart 
+          <BarChart
             data={mockAnalyticsData.userActivityByHour}
             xKey="hour"
             yKey="count"
@@ -251,7 +251,7 @@ const AdminAnalytics: React.FC = () => {
         <h2 className="text-lg font-semibold text-[var(--color-neutral-900)] mb-4">User Activity Monitoring</h2>
         <UserActivityTable />
       </div>
-      
+
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-lg font-semibold text-[var(--color-neutral-900)] mb-4">Top Users by Analysis Count</h2>
         <div className="overflow-x-auto">
@@ -291,24 +291,24 @@ const AdminAnalytics: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <span className={`text-sm font-medium 
-                        ${user.accuracy > 90 
-                          ? 'text-[var(--color-success)]' 
-                          : user.accuracy > 80 
-                            ? 'text-[var(--color-warning)]' 
+                        ${user.accuracy > 90
+                          ? 'text-[var(--color-success)]'
+                          : user.accuracy > 80
+                            ? 'text-[var(--color-warning)]'
                             : 'text-[var(--color-danger)]'
                         }`}
                       >
                         {user.accuracy}%
                       </span>
                       <div className="ml-2 w-16 bg-[var(--color-neutral-100)] rounded-full h-1.5">
-                        <div 
+                        <div
                           className={`h-1.5 rounded-full 
-                            ${user.accuracy > 90 
-                              ? 'bg-[var(--color-success)]' 
-                              : user.accuracy > 80 
-                                ? 'bg-[var(--color-warning)]' 
+                            ${user.accuracy > 90
+                              ? 'bg-[var(--color-success)]'
+                              : user.accuracy > 80
+                                ? 'bg-[var(--color-warning)]'
                                 : 'bg-[var(--color-danger)]'
-                            }`} 
+                            }`}
                           style={{ width: `${user.accuracy}%` }}
                         ></div>
                       </div>
@@ -331,7 +331,7 @@ const AdminAnalytics: React.FC = () => {
   const renderPerformanceTab = () => (
     <div className="space-y-6">
       <SystemPerformanceMetrics data={mockAnalyticsData.systemPerformance} />
-      
+
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-lg font-semibold text-[var(--color-neutral-900)] mb-4">AI Model Performance</h2>
         <div className="overflow-x-auto">
@@ -361,24 +361,24 @@ const AdminAnalytics: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <span className={`text-sm font-medium 
-                        ${model.accuracy > 90 
-                          ? 'text-[var(--color-success)]' 
-                          : model.accuracy > 80 
-                            ? 'text-[var(--color-warning)]' 
+                        ${model.accuracy > 90
+                          ? 'text-[var(--color-success)]'
+                          : model.accuracy > 80
+                            ? 'text-[var(--color-warning)]'
                             : 'text-[var(--color-danger)]'
                         }`}
                       >
                         {model.accuracy}%
                       </span>
                       <div className="ml-2 w-16 bg-[var(--color-neutral-100)] rounded-full h-1.5">
-                        <div 
+                        <div
                           className={`h-1.5 rounded-full 
-                            ${model.accuracy > 90 
-                              ? 'bg-[var(--color-success)]' 
-                              : model.accuracy > 80 
-                                ? 'bg-[var(--color-warning)]' 
+                            ${model.accuracy > 90
+                              ? 'bg-[var(--color-success)]'
+                              : model.accuracy > 80
+                                ? 'bg-[var(--color-warning)]'
                                 : 'bg-[var(--color-danger)]'
-                            }`} 
+                            }`}
                           style={{ width: `${model.accuracy}%` }}
                         ></div>
                       </div>
@@ -419,10 +419,10 @@ const AdminAnalytics: React.FC = () => {
             </p>
           </div>
           <div className="mt-4 md:mt-0">
-            <DateRangePicker 
-              startDate={dateRange.startDate} 
-              endDate={dateRange.endDate} 
-              onChange={handleDateRangeChange} 
+            <DateRangePicker
+              startDate={dateRange.startDate}
+              endDate={dateRange.endDate}
+              onChange={handleDateRangeChange}
             />
           </div>
         </div>
@@ -433,11 +433,10 @@ const AdminAnalytics: React.FC = () => {
         <div className="flex overflow-x-auto">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center ${
-              activeTab === 'overview'
-                ? 'bg-[var(--color-primary)] text-white'
-                : 'text-[var(--color-neutral-600)] hover:text-[var(--color-neutral-900)] hover:bg-[var(--color-neutral-100)]'
-            }`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center ${activeTab === 'overview'
+              ? 'bg-[var(--color-primary)] text-white'
+              : 'text-[var(--color-neutral-600)] hover:text-[var(--color-neutral-900)] hover:bg-[var(--color-neutral-100)]'
+              }`}
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -446,11 +445,10 @@ const AdminAnalytics: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('user-activity')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center ${
-              activeTab === 'user-activity'
-                ? 'bg-[var(--color-primary)] text-white'
-                : 'text-[var(--color-neutral-600)] hover:text-[var(--color-neutral-900)] hover:bg-[var(--color-neutral-100)]'
-            }`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center ${activeTab === 'user-activity'
+              ? 'bg-[var(--color-primary)] text-white'
+              : 'text-[var(--color-neutral-600)] hover:text-[var(--color-neutral-900)] hover:bg-[var(--color-neutral-100)]'
+              }`}
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -459,11 +457,10 @@ const AdminAnalytics: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('performance')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center ${
-              activeTab === 'performance'
-                ? 'bg-[var(--color-primary)] text-white'
-                : 'text-[var(--color-neutral-600)] hover:text-[var(--color-neutral-900)] hover:bg-[var(--color-neutral-100)]'
-            }`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center ${activeTab === 'performance'
+              ? 'bg-[var(--color-primary)] text-white'
+              : 'text-[var(--color-neutral-600)] hover:text-[var(--color-neutral-900)] hover:bg-[var(--color-neutral-100)]'
+              }`}
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -472,11 +469,10 @@ const AdminAnalytics: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('reports')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center ${
-              activeTab === 'reports'
-                ? 'bg-[var(--color-primary)] text-white'
-                : 'text-[var(--color-neutral-600)] hover:text-[var(--color-neutral-900)] hover:bg-[var(--color-neutral-100)]'
-            }`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center ${activeTab === 'reports'
+              ? 'bg-[var(--color-primary)] text-white'
+              : 'text-[var(--color-neutral-600)] hover:text-[var(--color-neutral-900)] hover:bg-[var(--color-neutral-100)]'
+              }`}
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

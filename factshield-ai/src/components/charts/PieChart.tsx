@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 interface PieChartProps {
-  data: Array<Record<string, any>>;
+  data: Array<Record<string, string | number>>;
   nameKey: string;
   valueKey: string;
 }
@@ -46,7 +46,7 @@ const PieChart: React.FC<PieChartProps> = ({
     svg.appendChild(g);
 
     // Calculate total value
-    const total = data.reduce((sum, d) => sum + d[valueKey], 0);
+    const total = data.reduce((sum, d) => sum + Number(d[valueKey]), 0);
 
     // Define colors
     const colors = [
@@ -65,7 +65,7 @@ const PieChart: React.FC<PieChartProps> = ({
     // Create pie slices
     let startAngle = 0;
     data.forEach((d, i) => {
-      const value = d[valueKey];
+      const value = Number(d[valueKey]);
       const percentage = value / total;
       const angle = percentage * 2 * Math.PI;
       const endAngle = startAngle + angle;
@@ -149,7 +149,7 @@ const PieChart: React.FC<PieChartProps> = ({
       label.setAttribute('fill', 'var(--color-neutral-700)');
       
       // Truncate long labels
-      let labelText = d[nameKey];
+      let labelText = String(d[nameKey]);
       if (labelText.length > 15) {
         labelText = labelText.substring(0, 12) + '...';
       }

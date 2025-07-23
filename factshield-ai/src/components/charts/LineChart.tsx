@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 interface LineChartProps {
-  data: Array<Record<string, any>>;
+  data: Array<Record<string, string | number>>;
   xKey: string;
   yKey: string;
   xLabel?: string;
@@ -41,7 +41,7 @@ const LineChart: React.FC<LineChartProps> = ({
     const chartHeight = height - padding.top - padding.bottom;
 
     // Find min and max values
-    const yValues = data.map(d => d[yKey]);
+    const yValues = data.map(d => Number(d[yKey]));
     const minY = Math.min(...yValues);
     const maxY = Math.max(...yValues);
     const yRange = maxY - minY;
@@ -141,7 +141,7 @@ const LineChart: React.FC<LineChartProps> = ({
       tickLabel.setAttribute('font-size', '10px');
       
       // Format date if it's a date string
-      const value = data[i][xKey];
+      const value = String(data[i][xKey]);
       if (value.includes('-')) {
         const date = new Date(value);
         tickLabel.textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -155,7 +155,7 @@ const LineChart: React.FC<LineChartProps> = ({
     // Create line path
     const pathData = data.map((d, i) => {
       const x = (i / (data.length - 1)) * chartWidth;
-      const y = chartHeight - ((d[yKey] - minY) / yRange) * chartHeight;
+      const y = chartHeight - ((Number(d[yKey]) - minY) / yRange) * chartHeight;
       return `${i === 0 ? 'M' : 'L'}${x},${y}`;
     }).join(' ');
 
@@ -178,7 +178,7 @@ const LineChart: React.FC<LineChartProps> = ({
     // Create data points
     data.forEach((d, i) => {
       const x = (i / (data.length - 1)) * chartWidth;
-      const y = chartHeight - ((d[yKey] - minY) / yRange) * chartHeight;
+      const y = chartHeight - ((Number(d[yKey]) - minY) / yRange) * chartHeight;
       
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', x.toString());

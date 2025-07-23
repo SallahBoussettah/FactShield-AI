@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 interface BarChartProps {
-  data: Array<Record<string, any>>;
+  data: Array<Record<string, string | number>>;
   xKey: string;
   yKey: string;
   xLabel?: string;
@@ -41,7 +41,7 @@ const BarChart: React.FC<BarChartProps> = ({
     const chartHeight = height - padding.top - padding.bottom;
 
     // Find min and max values
-    const yValues = data.map(d => d[yKey]);
+    const yValues = data.map(d => Number(d[yKey]));
     const minY = Math.min(0, ...yValues); // Start from 0 or the minimum value
     const maxY = Math.max(...yValues);
     const yRange = maxY - minY;
@@ -133,7 +133,7 @@ const BarChart: React.FC<BarChartProps> = ({
     // Create bars and x-axis labels
     data.forEach((d, i) => {
       const x = (i / data.length) * chartWidth + barSpacing / 2;
-      const barHeight = ((d[yKey] - minY) / yRange) * chartHeight;
+      const barHeight = ((Number(d[yKey]) - minY) / yRange) * chartHeight;
       const y = chartHeight - barHeight;
       
       // Bar
@@ -169,7 +169,7 @@ const BarChart: React.FC<BarChartProps> = ({
       tickLabel.setAttribute('font-size', '10px');
       
       // Truncate long labels
-      let label = d[xKey];
+      let label = String(d[xKey]);
       if (label.length > 10) {
         label = label.substring(0, 8) + '...';
       }
@@ -191,7 +191,7 @@ const BarChart: React.FC<BarChartProps> = ({
       valueLabel.setAttribute('text-anchor', 'middle');
       valueLabel.setAttribute('fill', 'var(--color-neutral-700)');
       valueLabel.setAttribute('font-size', '10px');
-      valueLabel.textContent = d[yKey].toLocaleString();
+      valueLabel.textContent = Number(d[yKey]).toLocaleString();
       
       // Only show value label if there's enough space
       if (barHeight > 25) {

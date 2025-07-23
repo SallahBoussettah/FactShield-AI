@@ -24,17 +24,13 @@ const LoginPage: React.FC = () => {
   const handleLogin = async (formData: LoginFormData) => {
     try {
       await login(formData);
-    } catch (err) {
+    } catch {
       // Error is handled in the auth context
     }
   };
 
   const handleForgotPassword = async (email: string) => {
-    try {
-      await forgotPassword(email);
-    } catch (err) {
-      throw err;
-    }
+    await forgotPassword(email);
   };
 
   return (

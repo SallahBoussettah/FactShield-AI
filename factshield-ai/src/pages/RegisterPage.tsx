@@ -9,16 +9,11 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleRegister = async (data: RegisterFormData) => {
-    try {
-      await register(data);
-      // Redirect to login page after successful registration
-      navigate('/login', { 
-        state: { message: 'Registration successful! Please sign in.' }
-      });
-    } catch (error) {
-      // Error handling is done in the RegisterForm component
-      throw error;
-    }
+    await register(data);
+    // Redirect to login page after successful registration
+    navigate('/login', { 
+      state: { message: 'Registration successful! Please sign in.' }
+    });
   };
 
   return (
