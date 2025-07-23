@@ -153,6 +153,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
         
+        // Check if this is a mock token (from previous development)
+        if (token.includes('mock-jwt-token')) {
+          clearAuthData();
+          dispatch({ type: 'SET_LOADING', payload: false });
+          return;
+        }
+        
         // Check if token is expired
         if (isTokenExpired(token)) {
           // Try to refresh the token
@@ -161,20 +168,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (response) {
               dispatch({ type: 'LOGIN_SUCCESS', payload: response.user });
             } else {
+              clearAuthData();
               dispatch({ type: 'SET_LOADING', payload: false });
             }
           } catch (error) {
+            clearAuthData();
             dispatch({ type: 'SET_LOADING', payload: false });
           }
         } else {
-          // Token is still valid
-          dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-          
-          // Schedule token refresh
-          scheduleTokenRefresh(token);
+          // Token is still valid - but let's verify it's a real JWT
+          try {
+            // Try to decode the token to make sure it's valid
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload && payload.sub) {
+              dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+              scheduleTokenRefresh(token);
+            } else {
+              throw new Error('Invalid token format');
+            }
+          } catch (error) {
+            clearAuthData();
+            dispatch({ type: 'SET_LOADING', payload: false });
+          }
         }
       } catch (error) {
         console.error('Error loading user:', error);
+        clearAuthData();
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
@@ -218,9 +237,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: 'SET_LOADING', payload: true });
       
       const { confirmPassword: _, ...registerData } = formData;
-      await authService.register(registerData);
+      const response = await authService.register(registerData);
       
-      dispatch({ type: 'REGISTER_SUCCESS' });
+      // Store authentication data securely (auto-login after registration)
+      setAuthToken(response.token);
+      setUserData(response.user);
+      
+      // Schedule token refresh
+      scheduleTokenRefresh(response.token);
+      
+      dispatch({ type: 'LOGIN_SUCCESS', payload: response.user });
     } catch (error) {
       dispatch({ 
         type: 'REGISTER_FAILURE', 

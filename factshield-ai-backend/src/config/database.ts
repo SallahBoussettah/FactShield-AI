@@ -54,16 +54,30 @@ export const query = async (text: string, params?: unknown[]): Promise<unknown> 
 
 const createTables = async (): Promise<void> => {
   try {
-    // Users table
+    // Users table with roles support
     await query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
-        name VARCHAR(255) NOT NULL,
+        roles TEXT[] DEFAULT ARRAY['user'],
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         last_login TIMESTAMP,
+        email_verified BOOLEAN DEFAULT FALSE,
+        is_active BOOLEAN DEFAULT TRUE,
         settings JSONB DEFAULT '{"theme": "light", "notifications": true, "privacyLevel": "standard"}'::jsonb
+      )
+    `);
+
+    // Token blacklist table for logout functionality
+    await query(`
+      CREATE TABLE IF NOT EXISTS token_blacklist (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        token_jti VARCHAR(255) UNIQUE NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 

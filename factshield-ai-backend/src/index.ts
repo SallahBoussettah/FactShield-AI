@@ -21,7 +21,10 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://localhost:5173' // Vite default port
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -30,7 +33,7 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // Higher limit for development
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -58,14 +61,20 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes will be added here
+// Import routes
+import authRoutes from './routes/auth';
+
+// API routes
+app.use('/api/auth', authRoutes);
+
 app.get('/api', (req, res) => {
   res.json({
     message: 'FactShield AI Backend API',
     version: '1.0.0',
     endpoints: {
       health: '/health',
-      api: '/api'
+      api: '/api',
+      auth: '/api/auth'
     }
   });
 });
@@ -79,7 +88,7 @@ async function startServer() {
   try {
     // Connect to database
     await connectDatabase();
-    
+
     app.listen(PORT, () => {
       logger.info(`🚀 FactShield AI Backend server running on port ${PORT}`);
       logger.info(`📊 Health check available at http://localhost:${PORT}/health`);

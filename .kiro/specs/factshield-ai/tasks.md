@@ -192,22 +192,23 @@
   - Implement basic middleware (logging, CORS, etc.)
   - _Requirements: 6.1_
 
-- [-] 12. Authentication System
+- [x] 12. Authentication System
 
 
-  - [ ] 12.1 Review frontend auth components
+  - [x] 12.1 Review frontend auth components
+
     - Analyze existing auth UI components and requirements
     - Document API endpoints needed for authentication
     - Map frontend auth flows to backend implementation
     - _Requirements: 3.1, 3.2, 3.3_
   
-  - [ ] 12.2 Implement user model and database schema
+  - [x] 12.2 Implement user model and database schema
     - Create user table and model
     - Add validation and password hashing
     - Implement database access methods
     - _Requirements: 3.2_
   
-  - [ ] 12.3 Build authentication controllers
+  - [x] 12.3 Build authentication controllers
     - Create registration endpoint / Make sure things are connected properly with the register and login from frontend
     - Implement login with JWT generation
     - Add token refresh and validation

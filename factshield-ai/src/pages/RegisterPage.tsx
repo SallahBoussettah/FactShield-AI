@@ -5,15 +5,17 @@ import RegisterForm from '../components/auth/RegisterForm';
 import type { RegisterFormData } from '../types/auth';
 
 const RegisterPage: React.FC = () => {
-  const { register } = useAuth();
+  const { authState, register, clearErrors } = useAuth();
   const navigate = useNavigate();
 
   const handleRegister = async (data: RegisterFormData) => {
-    await register(data);
-    // Redirect to login page after successful registration
-    navigate('/login', { 
-      state: { message: 'Registration successful! Please sign in.' }
-    });
+    try {
+      await register(data);
+      // Registration automatically logs the user in, so redirect to dashboard
+      navigate('/dashboard');
+    } catch {
+      // Error is handled in the auth context and will be displayed via authState.error
+    }
   };
 
   return (
@@ -26,7 +28,12 @@ const RegisterPage: React.FC = () => {
           </p>
         </div>
         
-        <RegisterForm onSubmit={handleRegister} />
+        <RegisterForm 
+          onSubmit={handleRegister} 
+          isLoading={authState.loading}
+          error={authState.error}
+          onClearError={clearErrors}
+        />
         
       </div>
     </div>

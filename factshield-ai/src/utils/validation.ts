@@ -14,9 +14,10 @@ export const validateEmail = (email: string): boolean => {
  * - Contains at least one uppercase letter
  * - Contains at least one lowercase letter
  * - Contains at least one number
+ * - Contains at least one special character (@$!%*?&)
  */
 export const validatePassword = (password: string): boolean => {
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return passwordRegex.test(password);
 };
 
@@ -49,7 +50,7 @@ export const getEmailError = (email: string): string => {
 export const getPasswordError = (password: string): string => {
   if (!password) return 'Password is required';
   if (!validatePassword(password)) {
-    return 'Password must be at least 8 characters and contain uppercase, lowercase, and numbers';
+    return 'Password must be at least 8 characters and contain uppercase, lowercase, numbers, and special characters (@$!%*?&)';
   }
   return '';
 };

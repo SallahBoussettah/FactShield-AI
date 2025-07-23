@@ -10,6 +10,7 @@ interface LoginFormProps {
   isLoading?: boolean;
   error?: string | null;
   successMessage?: string | null;
+  onClearError?: () => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ 
@@ -17,7 +18,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onForgotPassword,
   isLoading = false,
   error = null,
-  successMessage = null
+  successMessage = null,
+  onClearError
 }) => {
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
@@ -60,6 +62,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    
+    // Clear any existing errors when user starts typing
+    if (error && onClearError) {
+      onClearError();
+    }
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {

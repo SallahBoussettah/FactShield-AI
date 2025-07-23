@@ -1,8 +1,0 @@
-This is a test document for FactShield AI content upload functionality.
-
-The document contains several claims that can be fact-checked:
-1. The Earth is round and orbits around the Sun.
-2. Water boils at 100 degrees Celsius at sea level.
-3. The Great Wall of China is visible from space with the naked eye.
-
-This document is used to test the drag-and-drop upload feature, file validation, and progress indicators in the FactShield AI dashboard.

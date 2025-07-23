@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../ui/Button';
+import PasswordRequirements from './PasswordRequirements';
 import type { RegisterFormData } from '../../types/auth';
 import { 
   getEmailError, 
@@ -13,12 +14,14 @@ interface RegisterFormProps {
   onSubmit: (data: RegisterFormData) => Promise<void>;
   isLoading?: boolean;
   error?: string | null;
+  onClearError?: () => void;
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ 
   onSubmit, 
   isLoading = false,
-  error = null
+  error = null,
+  onClearError
 }) => {
   const [formData, setFormData] = useState<RegisterFormData>({
     name: '',
@@ -52,6 +55,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear any existing errors when user starts typing
+    if (error && onClearError) {
+      onClearError();
+    }
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -160,6 +168,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           {errors.password && (
             <p className="mt-1 text-sm text-[var(--color-danger-500)]">{errors.password}</p>
           )}
+          <PasswordRequirements 
+            password={formData.password} 
+            show={touched.password || formSubmitted}
+          />
         </div>
         
         <div className="mb-6">

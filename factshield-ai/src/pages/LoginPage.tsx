@@ -11,7 +11,7 @@ interface LocationState {
 }
 
 const LoginPage: React.FC = () => {
-  const { authState, login, forgotPassword } = useAuth();
+  const { authState, login, forgotPassword, clearErrors } = useAuth();
   const location = useLocation();
   
   // Redirect if user is already authenticated
@@ -49,6 +49,7 @@ const LoginPage: React.FC = () => {
           isLoading={authState.loading} 
           error={authState.error}
           successMessage={successMessage}
+          onClearError={clearErrors}
         />
       </div>
     </div>

@@ -18,6 +18,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import RoleBasedRoute from './components/auth/RoleBasedRoute'
 
+
 function App() {
   return (
     <AuthProvider>
@@ -77,6 +78,7 @@ function App() {
             } 
           />
         </Routes>
+
       </Router>
     </AuthProvider>
   )
