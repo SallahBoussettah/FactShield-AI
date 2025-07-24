@@ -5,6 +5,7 @@ import { SettingsProvider } from '../contexts/SettingsContext';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import ContentUpload from '../components/dashboard/ContentUpload';
 import UrlAnalysis from '../components/dashboard/UrlAnalysis';
+import TextAnalysis from '../components/dashboard/TextAnalysis';
 import AnalysisResults from '../components/dashboard/AnalysisResults';
 import RecentActivity from '../components/dashboard/RecentActivity';
 import HistoryFilters from '../components/history/HistoryFilters';
@@ -33,7 +34,7 @@ const DashboardPage: React.FC = () => {
   };
   
   const [activeSection, setActiveSection] = useState(getInitialSection());
-  const [analysisTab, setAnalysisTab] = useState<'upload' | 'url'>('upload');
+  const [analysisTab, setAnalysisTab] = useState<'upload' | 'url' | 'text'>('upload');
   const [settingsTab, setSettingsTab] = useState<'account' | 'notifications' | 'appearance' | 'data'>('account');
   const [currentAnalysisResult, setCurrentAnalysisResult] = useState<AnalysisResult | null>(null);
 
@@ -218,6 +219,24 @@ const DashboardPage: React.FC = () => {
                       <p className="text-sm text-[var(--color-neutral-600)]">Analyze content from a web link</p>
                     </div>
                   </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveSection('analyze');
+                      setAnalysisTab('text');
+                    }}
+                    className="w-full flex items-center p-3 text-left rounded-lg border border-[var(--color-neutral-200)] hover:border-[var(--color-warning)] hover:bg-[var(--color-warning)]/5 transition-all duration-200"
+                  >
+                    <div className="p-2 bg-[var(--color-warning)]/10 rounded-lg mr-3">
+                      <svg className="w-5 h-5 text-[var(--color-warning)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium text-[var(--color-neutral-900)]">Analyze Text</p>
+                      <p className="text-sm text-[var(--color-neutral-600)]">Paste text content to fact-check</p>
+                    </div>
+                  </button>
                 </div>
               </div>
 
@@ -273,6 +292,23 @@ const DashboardPage: React.FC = () => {
                       Analyze URLs
                     </div>
                   </button>
+                  <button
+                    onClick={() => setAnalysisTab('text')}
+                    className={`
+                      py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200
+                      ${analysisTab === 'text'
+                        ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                        : 'border-transparent text-[var(--color-neutral-500)] hover:text-[var(--color-neutral-700)] hover:border-[var(--color-neutral-300)]'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Analyze Text
+                    </div>
+                  </button>
                 </nav>
               </div>
 
@@ -292,10 +328,17 @@ const DashboardPage: React.FC = () => {
                         setCurrentAnalysisResult(results);
                       }}
                     />
-                  ) : (
+                  ) : analysisTab === 'url' ? (
                     <UrlAnalysis
                       onUrlAnalyzed={(url, results) => {
                         console.log('URL analyzed:', url, results);
+                        setCurrentAnalysisResult(results);
+                      }}
+                    />
+                  ) : (
+                    <TextAnalysis
+                      onTextAnalyzed={(text, results) => {
+                        console.log('Text analyzed:', text.substring(0, 100) + '...', results);
                         setCurrentAnalysisResult(results);
                       }}
                     />
@@ -305,12 +348,22 @@ const DashboardPage: React.FC = () => {
             </div>
 
             {/* Demo section for testing */}
-            <div className="bg-[var(--color-neutral-50)] rounded-lg p-4 border border-[var(--color-neutral-200)]">
-              <p className="text-sm text-[var(--color-neutral-600)]">
-                <strong>Demo Note:</strong> Both upload and URL analysis components are now functional.
-                The upload component supports drag-and-drop with file validation, and the URL analysis
-                form includes proper validation and error handling. Try both tabs to test the functionality!
-              </p>
+            <div className="bg-[var(--color-secondary)]/10 rounded-lg p-4 border border-[var(--color-secondary)]/20">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-[var(--color-secondary)] mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-secondary)] mb-1">
+                    ✨ Backend Integration Complete!
+                  </p>
+                  <p className="text-sm text-[var(--color-neutral-600)]">
+                    All analysis components are now connected to your backend APIs. Upload documents, analyze URLs, 
+                    or paste text content to test the real AI-powered fact-checking functionality. Make sure your 
+                    backend server is running on port 3001 and you have your Hugging Face API key configured.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         );

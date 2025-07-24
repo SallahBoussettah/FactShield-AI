@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
 import type { UploadedFile, ContentUploadProps, AnalysisResult } from '../../types/upload';
+import { analyzeDocument, validateFile as validateFileService } from '../../services/analysisService';
 
-const ContentUpload: React.FC<ContentUploadProps> = ({ 
+const ContentUpload: React.FC<ContentUploadProps> = ({
   onFileAnalyzed,
   maxFileSize = 10 * 1024 * 1024, // 10MB default
   allowedFileTypes = [
@@ -19,67 +20,50 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = useCallback((file: File): string | null => {
-    // Check file size
-    if (file.size > maxFileSize) {
-      return `File size exceeds ${(maxFileSize / 1024 / 1024).toFixed(0)}MB limit. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`;
+    return validateFileService(file, maxFileSize, allowedFileTypes);
+  }, [maxFileSize, allowedFileTypes]);
+
+  const uploadAndAnalyzeFile = useCallback(async (file: File): Promise<AnalysisResult> => {
+    // Simulate progress updates during upload
+    const progressInterval = setInterval(() => {
+      setUploadedFiles(prev =>
+        prev.map(f => {
+          if (f.file === file && f.progress < 90) {
+            return { ...f, progress: Math.min(90, f.progress + Math.random() * 20) };
+          }
+          return f;
+        })
+      );
+    }, 500);
+
+    try {
+      // Call the real API
+      const result = await analyzeDocument(file, {
+        maxClaims: 10,
+        minConfidence: 0.6,
+        includeOpinions: false,
+        maxSources: 3,
+        minSourceReliability: 0.6
+      });
+
+      // Complete the progress
+      clearInterval(progressInterval);
+      setUploadedFiles(prev =>
+        prev.map(f =>
+          f.file === file ? { ...f, progress: 100 } : f
+        )
+      );
+
+      return result;
+    } catch (error) {
+      clearInterval(progressInterval);
+      throw error;
     }
-
-    // Check file type
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    if (!allowedFileTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
-      return `File type not supported. Allowed types: ${allowedExtensions.join(', ').toUpperCase()}`;
-    }
-
-    return null;
-  }, [maxFileSize, allowedFileTypes, allowedExtensions]);
-
-  const simulateFileUpload = useCallback((file: File): Promise<AnalysisResult> => {
-    return new Promise((resolve) => {
-      // Simulate upload progress
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 30;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          
-          // Simulate analysis results
-          setTimeout(() => {
-            resolve({
-              id: Date.now().toString(),
-              fileName: file.name,
-              claims: [
-                {
-                  id: '1',
-                  text: 'Sample claim extracted from document',
-                  confidence: 0.85,
-                  credibilityScore: 0.72,
-                  sources: [
-                    {
-                      url: 'https://example.com/source1',
-                      title: 'Reliable Source 1',
-                      reliability: 0.9
-                    }
-                  ]
-                }
-              ],
-              summary: 'Document analysis completed successfully'
-            });
-          }, 500);
-        }
-        
-        setUploadedFiles(prev => 
-          prev.map(f => 
-            f.file === file ? { ...f, progress } : f
-          )
-        );
-      }, 200);
-    });
   }, []);
 
   const processFile = useCallback(async (file: File) => {
-    const fileId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-    
+    const fileId = Date.now().toString() + Math.random().toString(36).substring(2, 11);
+
     // Add file to uploaded files list
     const uploadedFile: UploadedFile = {
       file,
@@ -91,12 +75,12 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
     setUploadedFiles(prev => [...prev, uploadedFile]);
 
     try {
-      const results = await simulateFileUpload(file);
-      
+      const results = await uploadAndAnalyzeFile(file);
+
       // Update file status to completed
-      setUploadedFiles(prev => 
-        prev.map(f => 
-          f.id === fileId 
+      setUploadedFiles(prev =>
+        prev.map(f =>
+          f.id === fileId
             ? { ...f, status: 'completed', progress: 100 }
             : f
         )
@@ -104,30 +88,30 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
 
       // Notify parent component
       onFileAnalyzed?.(fileId, results);
-      
+
     } catch (error) {
       // Update file status to error
-      setUploadedFiles(prev => 
-        prev.map(f => 
-          f.id === fileId 
-            ? { 
-                ...f, 
-                status: 'error', 
-                error: error instanceof Error ? error.message : 'Upload failed'
-              }
+      setUploadedFiles(prev =>
+        prev.map(f =>
+          f.id === fileId
+            ? {
+              ...f,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Upload failed'
+            }
             : f
         )
       );
     }
-  }, [simulateFileUpload, onFileAnalyzed]);
+  }, [uploadAndAnalyzeFile, onFileAnalyzed]);
 
   const handleFiles = useCallback((files: FileList | File[]) => {
     const fileArray = Array.from(files);
-    
+
     fileArray.forEach(file => {
       // Check if file is already uploaded
-      const isDuplicate = uploadedFiles.some(uploadedFile => 
-        uploadedFile.file.name === file.name && 
+      const isDuplicate = uploadedFiles.some(uploadedFile =>
+        uploadedFile.file.name === file.name &&
         uploadedFile.file.size === file.size &&
         uploadedFile.status !== 'error'
       );
@@ -138,10 +122,10 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
       }
 
       const validationError = validateFile(file);
-      
+
       if (validationError) {
         // Add file with error status
-        const fileId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+        const fileId = Date.now().toString() + Math.random().toString(36).substring(2, 11);
         setUploadedFiles(prev => [...prev, {
           file,
           id: fileId,
@@ -174,7 +158,7 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       handleFiles(files);
@@ -210,8 +194,8 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
       <div
         className={`
           relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200
-          ${isDragOver 
-            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5' 
+          ${isDragOver
+            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
             : 'border-[var(--color-neutral-300)] hover:border-[var(--color-primary)]/50'
           }
         `}
@@ -228,13 +212,13 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           aria-label="Upload files for analysis"
         />
-        
+
         <div className="space-y-4">
           <div className="flex justify-center">
             <div className={`
               p-4 rounded-full transition-colors duration-200
-              ${isDragOver 
-                ? 'bg-[var(--color-primary)] text-white' 
+              ${isDragOver
+                ? 'bg-[var(--color-primary)] text-white'
                 : 'bg-[var(--color-neutral-100)] text-[var(--color-neutral-600)]'
               }
             `}>
@@ -243,7 +227,7 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
               </svg>
             </div>
           </div>
-          
+
           <div>
             <h3 className="text-lg font-semibold text-[var(--color-neutral-900)] mb-2">
               {isDragOver ? 'Drop files here' : 'Upload Documents for Analysis'}
@@ -255,7 +239,7 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
               Supported formats: {allowedExtensions.join(', ').toUpperCase()} (Max {(maxFileSize / 1024 / 1024).toFixed(0)}MB each)
             </p>
           </div>
-          
+
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -275,7 +259,7 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
           <h4 className="text-lg font-semibold text-[var(--color-neutral-900)]">
             Uploaded Files ({uploadedFiles.length})
           </h4>
-          
+
           <div className="space-y-3">
             {uploadedFiles.map((uploadedFile) => (
               <div
@@ -286,11 +270,11 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
                   <div className="flex items-center space-x-3">
                     <div className={`
                       p-2 rounded-lg
-                      ${uploadedFile.status === 'completed' 
+                      ${uploadedFile.status === 'completed'
                         ? 'bg-[var(--color-secondary)]/10 text-[var(--color-secondary)]'
                         : uploadedFile.status === 'error'
-                        ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]'
-                        : 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                          ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]'
+                          : 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
                       }
                     `}>
                       {uploadedFile.status === 'completed' ? (
@@ -307,7 +291,7 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
                         </svg>
                       )}
                     </div>
-                    
+
                     <div>
                       <p className="font-medium text-[var(--color-neutral-900)]">
                         {uploadedFile.file.name}
@@ -317,7 +301,7 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
                       </p>
                     </div>
                   </div>
-                  
+
                   <button
                     onClick={() => removeFile(uploadedFile.id)}
                     className="p-1 text-[var(--color-neutral-400)] hover:text-[var(--color-danger)] transition-colors duration-200"
@@ -327,7 +311,7 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
                     </svg>
                   </button>
                 </div>
-                
+
                 {/* Progress Bar */}
                 {uploadedFile.status === 'uploading' && (
                   <div className="mb-3">
@@ -343,14 +327,14 @@ const ContentUpload: React.FC<ContentUploadProps> = ({
                     </div>
                   </div>
                 )}
-                
+
                 {/* Status Messages */}
                 {uploadedFile.status === 'completed' && (
                   <div className="text-sm text-[var(--color-secondary)] font-medium">
                     ✓ Analysis completed successfully
                   </div>
                 )}
-                
+
                 {uploadedFile.status === 'error' && uploadedFile.error && (
                   <div className="text-sm text-[var(--color-danger)] bg-[var(--color-danger)]/5 p-2 rounded">
                     ⚠ {uploadedFile.error}

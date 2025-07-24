@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import type { AnalysisResult, UrlAnalysisProps } from '../../types/upload';
 import AnalysisResults from './AnalysisResults';
+import { analyzeUrl, validateUrl as validateUrlService, checkUrlAccessibility } from '../../services/analysisService';
 
 interface UrlAnalysisState {
   url: string;
@@ -18,122 +19,83 @@ const UrlAnalysis: React.FC<UrlAnalysisProps> = ({ onUrlAnalyzed }) => {
   });
 
   const validateUrl = useCallback((url: string): string | null => {
-    if (!url.trim()) {
-      return 'URL is required';
-    }
-
-    // Basic URL validation
-    try {
-      const urlObj = new URL(url);
-      
-      // Check if protocol is http or https
-      if (!['http:', 'https:'].includes(urlObj.protocol)) {
-        return 'URL must use HTTP or HTTPS protocol';
-      }
-
-      // Check if hostname exists
-      if (!urlObj.hostname) {
-        return 'Invalid URL format';
-      }
-
-      return null;
-    } catch {
-      return 'Please enter a valid URL (e.g., https://example.com)';
-    }
+    return validateUrlService(url);
   }, []);
 
-  const simulateUrlAnalysis = useCallback((url: string): Promise<AnalysisResult> => {
-    return new Promise((resolve, reject) => {
-      // Simulate network delay
-      setTimeout(() => {
-        // Simulate occasional failures for testing error handling
-        if (Math.random() < 0.1) {
-          reject(new Error('Failed to fetch content from URL. Please check if the URL is accessible.'));
-          return;
-        }
+  const analyzeUrlContent = useCallback(async (url: string): Promise<AnalysisResult> => {
+    try {
+      // Optional: Check URL accessibility first
+      const accessibilityCheck = await checkUrlAccessibility(url);
+      if (!accessibilityCheck.accessible) {
+        throw new Error(accessibilityCheck.error || 'URL is not accessible');
+      }
 
-        // Simulate successful analysis
-        resolve({
-          id: Date.now().toString(),
-          fileName: `Analysis of ${url}`,
-          claims: [
-            {
-              id: '1',
-              text: 'Sample claim extracted from webpage content',
-              confidence: 0.78,
-              credibilityScore: 0.65,
-              sources: [
-                {
-                  url: 'https://example.com/fact-check-source',
-                  title: 'Fact-checking Source',
-                  reliability: 0.85
-                }
-              ]
-            },
-            {
-              id: '2',
-              text: 'Another claim found in the analyzed content',
-              confidence: 0.92,
-              credibilityScore: 0.88,
-              sources: [
-                {
-                  url: 'https://reliable-news.com/verification',
-                  title: 'Reliable News Verification',
-                  reliability: 0.95
-                }
-              ]
-            }
-          ],
-          summary: `Successfully analyzed content from ${url}. Found 2 claims for fact-checking.`
-        });
-      }, 2000 + Math.random() * 1000); // 2-3 second delay
-    });
+      // Analyze the URL content
+      const result = await analyzeUrl({
+        url,
+        options: {
+          timeout: 30000,
+          followRedirects: true,
+          maxRedirects: 5,
+          maxClaims: 10,
+          minConfidence: 0.6,
+          includeOpinions: false,
+          maxSources: 3,
+          minSourceReliability: 0.6
+        }
+      });
+
+      return result;
+    } catch (error) {
+      console.error('URL analysis failed:', error);
+      throw error;
+    }
   }, []);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const trimmedUrl = state.url.trim();
     const validationError = validateUrl(trimmedUrl);
-    
+
     if (validationError) {
       setState(prev => ({ ...prev, error: validationError }));
       return;
     }
 
-    setState(prev => ({ 
-      ...prev, 
-      isLoading: true, 
-      error: null, 
-      results: null 
+    setState(prev => ({
+      ...prev,
+      isLoading: true,
+      error: null,
+      results: null
     }));
 
     try {
-      const results = await simulateUrlAnalysis(trimmedUrl);
-      
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        results 
+      const results = await analyzeUrlContent(trimmedUrl);
+
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        results
       }));
 
       // Notify parent component
       onUrlAnalyzed?.(trimmedUrl, results);
-      
+
     } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
         error: error instanceof Error ? error.message : 'Failed to analyze URL'
       }));
     }
-  }, [state.url, validateUrl, simulateUrlAnalysis, onUrlAnalyzed]);
+  }, [state.url, validateUrl, analyzeUrlContent, onUrlAnalyzed]);
 
   const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newUrl = e.target.value;
-    setState(prev => ({ 
-      ...prev, 
-      url: newUrl, 
+    setState(prev => ({
+      ...prev,
+      url: newUrl,
       error: null // Clear error when user starts typing
     }));
   }, []);
@@ -182,8 +144,8 @@ const UrlAnalysis: React.FC<UrlAnalysisProps> = ({ onUrlAnalyzed }) => {
                 disabled={state.isLoading}
                 className={`
                   w-full px-4 py-3 pr-12 border rounded-lg transition-all duration-200
-                  ${state.error 
-                    ? 'border-[var(--color-danger)] focus:border-[var(--color-danger)] focus:ring-[var(--color-danger)]/20' 
+                  ${state.error
+                    ? 'border-[var(--color-danger)] focus:border-[var(--color-danger)] focus:ring-[var(--color-danger)]/20'
                     : 'border-[var(--color-neutral-300)] focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]/20'
                   }
                   focus:outline-none focus:ring-2
@@ -198,7 +160,7 @@ const UrlAnalysis: React.FC<UrlAnalysisProps> = ({ onUrlAnalyzed }) => {
                 </svg>
               </div>
             </div>
-            
+
             {state.error && (
               <p id="url-error" className="mt-2 text-sm text-[var(--color-danger)] flex items-center">
                 <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -34,8 +34,8 @@ class ClaimExtractionService {
   private hf: HfInference;
   private readonly defaultOptions: Required<ClaimExtractionOptions> = {
     maxClaims: 20,
-    minConfidence: 0.5,
-    includeOpinions: false,
+    minConfidence: 0.4, // Set to 0.4 to match our logic
+    includeOpinions: true, // Include opinions for better detection
     language: 'en',
     contextWindow: 100
   };
@@ -59,7 +59,7 @@ class ClaimExtractionService {
     if (!apiKey) {
       logger.warn('HUGGINGFACE_API_KEY not found. Using public inference API with rate limits.');
     }
-    
+
     this.hf = new HfInference(apiKey);
   }
 
@@ -67,11 +67,16 @@ class ClaimExtractionService {
    * Split text into sentences for processing
    */
   private splitIntoSentences(text: string): string[] {
-    // Simple sentence splitting - in production, you might want to use a more sophisticated approach
+    // Improved sentence splitting to better detect claims
     return text
       .split(/[.!?]+/)
       .map(sentence => sentence.trim())
-      .filter(sentence => sentence.length > 10); // Filter out very short sentences
+      .filter(sentence => sentence.length > 5) // Lowered from 10 to catch shorter claims
+      .map(sentence => {
+        // Clean up sentence and ensure it ends properly
+        return sentence.replace(/^\s*[-•]\s*/, '').trim(); // Remove bullet points
+      })
+      .filter(sentence => sentence.length > 0);
   }
 
   /**
@@ -99,7 +104,7 @@ class ClaimExtractionService {
   private async classifyClaimType(text: string): Promise<{ category: ExtractedClaim['category']; confidence: number }> {
     try {
       const labels = ['factual statement', 'opinion', 'prediction', 'statistical claim', 'unknown'];
-      
+
       const result = await this.hf.zeroShotClassification({
         model: this.models.zeroShotClassification,
         inputs: text,
@@ -177,7 +182,7 @@ class ClaimExtractionService {
    * Extract claims using sentence-level analysis
    */
   private async extractClaimsFromSentences(
-    sentences: string[], 
+    sentences: string[],
     originalText: string,
     options: ClaimExtractionOptions
   ): Promise<ExtractedClaim[]> {
@@ -198,13 +203,19 @@ class ClaimExtractionService {
         // Classify the claim type
         const classification = await this.classifyClaimType(sentence);
 
+        // Add debug logging
+        logger.info(`Sentence: "${sentence.substring(0, 50)}..." - Category: ${classification.category}, Confidence: ${classification.confidence}`);
+
         // Skip opinions if not requested
         if (!config.includeOpinions && classification.category === 'opinion') {
+          logger.info(`Skipping opinion: "${sentence.substring(0, 30)}..."`);
           continue;
         }
 
-        // Skip low confidence claims
-        if (classification.confidence < config.minConfidence) {
+        // Accept unknown category as valid claims (they still need fact-checking)
+        // Only skip if confidence is very low (< 0.4)
+        if (classification.confidence < 0.4) {
+          logger.info(`Skipping very low confidence (${classification.confidence} < 0.4): "${sentence.substring(0, 30)}..."`);
           continue;
         }
 
@@ -217,7 +228,7 @@ class ClaimExtractionService {
         const keywords = this.extractKeywords(sentence);
 
         const claim: ExtractedClaim = {
-          id: `claim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `claim_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
           text: sentence.trim(),
           confidence: classification.confidence,
           category: classification.category,
@@ -255,7 +266,7 @@ class ClaimExtractionService {
     try {
       // Use a simple heuristic for now - in production, you might use a language detection model
       const sample = text.substring(0, 500).toLowerCase();
-      
+
       // English indicators
       if (sample.includes(' the ') && sample.includes(' and ') && sample.includes(' is ')) {
         return 'en';
@@ -268,7 +279,7 @@ class ClaimExtractionService {
       if (sample.includes(' le ') && sample.includes(' la ') && sample.includes(' est ')) {
         return 'fr';
       }
-      
+
       return 'unknown';
     } catch (error) {
       logger.warn('Language detection failed:', error);
@@ -281,10 +292,10 @@ class ClaimExtractionService {
    */
   async extractClaims(text: string, options: ClaimExtractionOptions = {}): Promise<ClaimExtractionResult> {
     const startTime = Date.now();
-    
+
     try {
       logger.info(`Starting claim extraction for text of ${text.length} characters`);
-      
+
       // Validate input
       if (!text || text.trim().length < 50) {
         throw new Error('Text must be at least 50 characters long');
@@ -295,13 +306,13 @@ class ClaimExtractionService {
       }
 
       const config = { ...this.defaultOptions, ...options };
-      
+
       // Detect language
       const detectedLanguage = await this.detectLanguage(text);
-      
+
       // Split text into sentences
       const sentences = this.splitIntoSentences(text);
-      
+
       if (sentences.length === 0) {
         throw new Error('No valid sentences found in text');
       }
@@ -310,7 +321,7 @@ class ClaimExtractionService {
 
       // Extract claims using multiple approaches
       const sentenceClaims = await this.extractClaimsFromSentences(sentences, text, config);
-      
+
       // Try to extract additional factual claims using QA approach
       let factualClaims: ExtractedClaim[] = [];
       try {
@@ -337,7 +348,7 @@ class ClaimExtractionService {
       // Combine and deduplicate claims
       const allClaims = [...sentenceClaims, ...factualClaims];
       const uniqueClaims = this.deduplicateClaims(allClaims);
-      
+
       // Sort by confidence and limit results
       const finalClaims = uniqueClaims
         .sort((a, b) => b.confidence - a.confidence)
@@ -354,7 +365,7 @@ class ClaimExtractionService {
       };
 
       logger.info(`Claim extraction completed: ${finalClaims.length} claims extracted in ${processingTime}ms`);
-      
+
       return result;
 
     } catch (error) {
@@ -368,19 +379,19 @@ class ClaimExtractionService {
    */
   private deduplicateClaims(claims: ExtractedClaim[]): ExtractedClaim[] {
     const uniqueClaims: ExtractedClaim[] = [];
-    
+
     for (const claim of claims) {
       const isDuplicate = uniqueClaims.some(existing => {
         // Simple similarity check - in production, you might use more sophisticated methods
         const similarity = this.calculateTextSimilarity(claim.text, existing.text);
         return similarity > 0.8;
       });
-      
+
       if (!isDuplicate) {
         uniqueClaims.push(claim);
       }
     }
-    
+
     return uniqueClaims;
   }
 
@@ -390,10 +401,10 @@ class ClaimExtractionService {
   private calculateTextSimilarity(text1: string, text2: string): number {
     const words1 = new Set(text1.toLowerCase().split(/\s+/));
     const words2 = new Set(text2.toLowerCase().split(/\s+/));
-    
+
     const intersection = new Set([...words1].filter(word => words2.has(word)));
     const union = new Set([...words1, ...words2]);
-    
+
     return intersection.size / union.size;
   }
 

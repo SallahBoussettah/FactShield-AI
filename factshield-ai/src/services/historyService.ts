@@ -10,7 +10,7 @@ const mockHistoryData: HistoryItem[] = [
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
     source: {
       type: 'url',
-      content: 'https://example.com/news/article1',
+      content: 'News Article Analysis',
     },
     summary: 'Analysis of news article about climate change',
     credibilityScore: 0.85,
@@ -50,7 +50,7 @@ const mockHistoryData: HistoryItem[] = [
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(), // 5 days ago
     source: {
       type: 'url',
-      content: 'https://example.com/blog/health-tips',
+      content: 'Health Blog Analysis',
     },
     summary: 'Analysis of health blog post about nutrition',
     credibilityScore: 0.78,
@@ -77,7 +77,7 @@ const mockHistoryData: HistoryItem[] = [
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(), // 10 days ago
     source: {
       type: 'url',
-      content: 'https://example.com/science/discovery',
+      content: 'Science Article Analysis',
     },
     summary: 'Analysis of article about new scientific discovery',
     credibilityScore: 0.88,
@@ -225,13 +225,13 @@ export const getHistoryItemResults = async (analysisId: string): Promise<Analysi
           credibilityScore: historyItem.credibilityScore * (0.8 + Math.random() * 0.4),
           sources: [
             {
-              url: 'https://example.com/source1',
-              title: 'Example Source 1',
+              url: 'Generated Source 1',
+              title: 'AI-Generated Verification Source',
               reliability: 0.8 + Math.random() * 0.2
             },
             {
-              url: 'https://example.com/source2',
-              title: 'Example Source 2',
+              url: 'Generated Source 2',
+              title: 'AI-Generated Fact Check Source',
               reliability: 0.6 + Math.random() * 0.3
             }
           ]

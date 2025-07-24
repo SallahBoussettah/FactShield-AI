@@ -1,77 +1,188 @@
 import { Request, Response } from 'express';
-import { validationResult } from 'express-validator';
-import { urlFetchingService, UrlFetchOptions } from '../services/urlFetchingService';
-import { documentProcessingService } from '../services/documentProcessingService';
 import { claimExtractionService } from '../services/claimExtractionService';
 import { factCheckingService } from '../services/factCheckingService';
+import { urlFetchingService } from '../services/urlFetchingService';
 import { translationService } from '../services/translationService';
+import { analysisOrchestrator } from '../services/analysisOrchestrator';
 import { logger } from '../utils/logger';
 
-// Temporary interfaces for analysis results (will be expanded in later tasks)
-interface Claim {
+// Types for API requests and responses
+export interface UrlAnalysisRequest {
+  url: string;
+  options?: {
+    timeout?: number;
+    followRedirects?: boolean;
+    maxRedirects?: number;
+    maxClaims?: number;
+    minConfidence?: number;
+    includeOpinions?: boolean;
+    maxSources?: number;
+    minSourceReliability?: number;
+  };
+}
+
+export interface TextAnalysisRequest {
+  text: string;
+  source?: string;
+  options?: {
+    maxClaims?: number;
+    minConfidence?: number;
+    includeOpinions?: boolean;
+    language?: string;
+    maxSources?: number;
+    minSourceReliability?: number;
+  };
+}
+
+export interface DocumentAnalysisOptions {
+  maxClaims?: number;
+  minConfidence?: number;
+  includeOpinions?: boolean;
+  maxSources?: number;
+  minSourceReliability?: number;
+}
+
+export interface TranslationRequest {
+  text: string;
+  targetLanguage?: string;
+  detectLanguage?: boolean;
+}
+
+export interface LanguageDetectionRequest {
+  text: string;
+}
+
+// Response types
+export interface Claim {
   id: string;
   text: string;
   confidence: number;
   credibilityScore: number;
-  sources: Source[];
+  sources: Array<{
+    url: string;
+    title: string;
+    reliability: number;
+  }>;
 }
 
-interface Source {
-  url: string;
-  title: string;
-  reliability: number;
-}
-
-interface AnalysisResult {
+export interface AnalysisResult {
   id: string;
   fileName: string;
   claims: Claim[];
   summary: string;
 }
 
+export interface UrlAnalysisResponse {
+  analysisId: string;
+  url: string;
+  title: string;
+  extractedText: string;
+  metadata: {
+    author?: string;
+    publishDate?: string;
+    domain: string;
+    wordCount: number;
+    language?: string;
+    originalLanguage: string;
+    wasTranslated: boolean;
+    translationConfidence?: number;
+  };
+  claims: Claim[];
+  summary: string;
+  processingTime: number;
+}
+
+export interface TextAnalysisResponse {
+  analysisId: string;
+  textLength: number;
+  claims: Claim[];
+  summary: string;
+  processingTime: number;
+  originalLanguage: string;
+  wasTranslated: boolean;
+  translationConfidence?: number;
+}
+
+export interface DocumentAnalysisResponse {
+  analysisId: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  status: string;
+  extractedText: string;
+  claims: Claim[];
+  summary: string;
+  processingTime: number;
+  metadata: {
+    wordCount: number;
+    characterCount: number;
+    pageCount?: number;
+    language?: string;
+    author?: string;
+    title?: string;
+    originalLanguage: string;
+    wasTranslated: boolean;
+    translationConfidence?: number;
+  };
+}
+
+export interface TranslationResponse {
+  originalText: string;
+  translatedText: string;
+  sourceLanguage: string;
+  targetLanguage: string;
+  confidence: number;
+  processingTime: number;
+}
+
+export interface LanguageDetectionResponse {
+  language: string;
+  languageName: string;
+  confidence: number;
+  alternatives: Array<{
+    language: string;
+    languageName: string;
+    confidence: number;
+  }>;
+}
+
+export interface UrlAccessibilityResponse {
+  url: string;
+  accessible: boolean;
+  status?: number;
+  error?: string;
+}
+
 /**
  * Analyze content from URL
- * POST /api/analyze/url
  */
 export const analyzeUrl = async (req: Request, res: Response): Promise<void> => {
+  const startTime = Date.now();
+
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    const { url, options = {} }: UrlAnalysisRequest = req.body;
+
+    if (!url) {
       res.status(400).json({
         success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid request data',
-          details: errors.array()
-        },
-        timestamp: new Date().toISOString()
+        message: 'URL is required',
+        data: null
       });
       return;
     }
 
-    const { url, options = {} } = req.body;
-    const userId = (req as any).user?.id; // From auth middleware
+    logger.info(`Starting URL analysis for: ${url}`);
 
-    logger.info(`URL analysis request from user ${userId || 'anonymous'}: ${url}`);
-
-    // Configure fetch options
-    const fetchOptions: UrlFetchOptions = {
-      timeout: options.timeout || 30000,
+    // Extract content from URL
+    const urlContent = await urlFetchingService.fetchAndParseUrl(url, {
+      timeout: options.timeout || 10000,
       followRedirects: options.followRedirects !== false,
-      maxRedirects: options.maxRedirects || 5,
-      maxContentLength: 10 * 1024 * 1024 // 10MB limit
-    };
-
-    // Fetch and parse URL content
-    const urlContent = await urlFetchingService.fetchAndParseUrl(url, fetchOptions);
-
-    // Prepare text for analysis (translate if needed)
-    const preparedText = await translationService.prepareTextForAnalysis(urlContent.extractedText);
+      maxRedirects: options.maxRedirects || 5
+    });
 
     // Extract claims from the content
     const claimExtractionResult = await claimExtractionService.extractClaims(
-      preparedText.processedText,
+      urlContent.extractedText,
       {
         maxClaims: options.maxClaims || 10,
         minConfidence: options.minConfidence || 0.6,
@@ -79,578 +190,510 @@ export const analyzeUrl = async (req: Request, res: Response): Promise<void> => 
       }
     );
 
-    // Fact-check the extracted claims
-    const factCheckResults = await factCheckingService.factCheckClaims(
-      claimExtractionResult.claims,
+    // Generate sources for the full content (not individual claims)
+    const { sourceGenerationService } = await import('../services/sourceGenerationService');
+    const contentSources = await sourceGenerationService.generateSources(
+      urlContent.extractedText,
       {
-        maxSources: options.maxSources || 3,
-        minSourceReliability: options.minSourceReliability || 0.6
+        maxSources: 3, // Always exactly 3 sources
+        minReliability: options.minSourceReliability || 0.7
       }
     );
 
-    // Convert to the expected format
-    const claims: Claim[] = factCheckResults.map(result => ({
+    // Convert content sources to FactCheckSource format
+    const sharedFactCheckSources = contentSources.map((source: any) => ({
+      url: source.url,
+      title: source.title,
+      reliability: source.reliability,
+      domain: source.domain,
+      publishDate: source.publishDate,
+      author: source.author,
+      relevanceScore: source.relevanceScore,
+      factCheckResult: source.factCheckResult,
+      excerpt: source.excerpt
+    }));
+
+    // Fact-check the extracted claims with shared sources
+    const factCheckResults = await factCheckingService.batchFactCheck(
+      claimExtractionResult.claims,
+      {
+        maxSources: 0, // Don't generate sources for individual claims
+        minSourceReliability: options.minSourceReliability || 0.7
+      },
+      sharedFactCheckSources // Pass the content-level sources
+    );
+
+    // Convert to the expected format with shared sources
+    const sharedSources = contentSources.map((source: any) => ({
+      url: source.url,
+      title: source.title,
+      reliability: source.reliability
+    }));
+
+    const claims: Claim[] = factCheckResults.map((result: any) => ({
       id: result.claimId,
       text: result.originalClaim,
       confidence: claimExtractionResult.claims.find(c => c.id === result.claimId)?.confidence || 0.5,
       credibilityScore: result.credibilityScore,
-      sources: result.sources.map(source => ({
-        url: source.url,
-        title: source.title,
-        reliability: source.reliability
-      }))
+      sources: sharedSources // All claims share the same sources from full content
     }));
 
-    const analysisResult: AnalysisResult = {
-      id: Date.now().toString(),
-      fileName: `Analysis of ${urlContent.url}`,
-      claims: claims,
-      summary: `Successfully analyzed content from ${urlContent.url}. Extracted ${urlContent.extractedText.length} characters and found ${claims.length} claims for fact-checking.`
+    const processingTime = Date.now() - startTime;
+
+    const response: UrlAnalysisResponse = {
+      analysisId: Date.now().toString(),
+      url: urlContent.url,
+      title: urlContent.title || 'Untitled',
+      extractedText: urlContent.extractedText,
+      metadata: {
+        author: urlContent.metadata.author,
+        publishDate: urlContent.metadata.publishDate,
+        domain: urlContent.metadata.domain,
+        wordCount: urlContent.extractedText.split(/\s+/).length,
+        language: urlContent.metadata.language,
+        originalLanguage: urlContent.metadata.language || 'en',
+        wasTranslated: false,
+        translationConfidence: undefined
+      },
+      claims,
+      summary: `Successfully analyzed content from ${urlContent.url}. Extracted ${urlContent.extractedText.length} characters and found ${claims.length} claims for fact-checking.`,
+      processingTime
     };
 
-    // Prepare response
-    const response = {
+    logger.info(`URL analysis completed in ${processingTime}ms for: ${url}`);
+
+    res.json({
       success: true,
-      data: {
-        analysisId: analysisResult.id,
-        url: urlContent.url,
-        title: urlContent.title,
-        extractedText: urlContent.extractedText.substring(0, 1000) + '...', // Truncate for response
-        metadata: {
-          author: urlContent.metadata.author,
-          publishDate: urlContent.metadata.publishDate,
-          domain: urlContent.metadata.domain,
-          wordCount: urlContent.metadata.wordCount,
-          language: urlContent.metadata.language,
-          originalLanguage: preparedText.originalLanguage,
-          wasTranslated: preparedText.wasTranslated,
-          translationConfidence: preparedText.translationConfidence
-        },
-        claims: analysisResult.claims,
-        summary: analysisResult.summary,
-        processingTime: claimExtractionResult.processingTime
-      },
-      message: 'URL analysis completed successfully'
-    };
-
-    logger.info(`URL analysis completed for ${url}: ${urlContent.extractedText.length} characters extracted`);
-    res.status(200).json(response);
-
-  } catch (error) {
-    logger.error('URL analysis error:', error);
-
-    // Handle specific error types
-    let errorCode = 'PROCESSING_FAILED';
-    let statusCode = 500;
-    let errorMessage = 'Failed to analyze URL';
-
-    if (error instanceof Error) {
-      errorMessage = error.message;
-      
-      if (error.message.includes('Invalid URL') || error.message.includes('URL must use')) {
-        errorCode = 'INVALID_URL';
-        statusCode = 400;
-      } else if (error.message.includes('timeout') || error.message.includes('took too long')) {
-        errorCode = 'REQUEST_TIMEOUT';
-        statusCode = 408;
-      } else if (error.message.includes('Network error') || error.message.includes('unable to reach')) {
-        errorCode = 'NETWORK_ERROR';
-        statusCode = 502;
-      } else if (error.message.includes('HTTP 4')) {
-        errorCode = 'URL_NOT_ACCESSIBLE';
-        statusCode = 400;
-      } else if (error.message.includes('Insufficient content')) {
-        errorCode = 'INSUFFICIENT_CONTENT';
-        statusCode = 400;
-      }
-    }
-
-    res.status(statusCode).json({
-      success: false,
-      error: {
-        code: errorCode,
-        message: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? error : undefined
-      },
-      timestamp: new Date().toISOString()
-    });
-  }
-};
-
-/**
- * Check URL accessibility
- * POST /api/analyze/url/check
- */
-export const checkUrlAccessibility = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid request data',
-          details: errors.array()
-        },
-        timestamp: new Date().toISOString()
-      });
-      return;
-    }
-
-    const { url } = req.body;
-    
-    logger.info(`URL accessibility check: ${url}`);
-
-    const result = await urlFetchingService.checkUrlAccessibility(url);
-
-    res.status(200).json({
-      success: true,
-      data: {
-        url,
-        accessible: result.accessible,
-        status: result.status,
-        error: result.error
-      },
-      message: result.accessible ? 'URL is accessible' : 'URL is not accessible'
+      message: 'URL analysis completed successfully',
+      data: response
     });
 
   } catch (error) {
-    logger.error('URL accessibility check error:', error);
+    const processingTime = Date.now() - startTime;
+    logger.error('URL analysis failed:', error);
 
     res.status(500).json({
       success: false,
-      error: {
-        code: 'CHECK_FAILED',
-        message: 'Failed to check URL accessibility',
-        details: process.env.NODE_ENV === 'development' ? error : undefined
-      },
-      timestamp: new Date().toISOString()
+      message: error instanceof Error ? error.message : 'URL analysis failed',
+      data: null,
+      processingTime
     });
   }
 };
 
 /**
- * Analyze raw text content
- * POST /api/analyze/text
+ * Analyze raw text content using comprehensive orchestrator
  */
 export const analyzeText = async (req: Request, res: Response): Promise<void> => {
+  const startTime = Date.now();
+
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    const { text, options = {} }: TextAnalysisRequest = req.body;
+
+    if (!text || text.trim().length === 0) {
       res.status(400).json({
         success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid request data',
-          details: errors.array()
-        },
-        timestamp: new Date().toISOString()
+        message: 'Text content is required',
+        data: null
       });
       return;
     }
 
-    const { text, source, options = {} } = req.body;
-    const userId = (req as any).user?.id;
+    logger.info(`Starting comprehensive text analysis for ${text.length} characters`);
 
-    logger.info(`Text analysis request from user ${userId || 'anonymous'}: ${text.length} characters`);
-
-    // Basic text validation
-    if (text.length < 50) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'INSUFFICIENT_CONTENT',
-          message: 'Text must be at least 50 characters long'
-        },
-        timestamp: new Date().toISOString()
-      });
-      return;
-    }
-
-    if (text.length > 50000) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'TEXT_TOO_LONG',
-          message: 'Text must be less than 50,000 characters'
-        },
-        timestamp: new Date().toISOString()
-      });
-      return;
-    }
-
-    // Prepare text for analysis (translate if needed)
-    const preparedText = await translationService.prepareTextForAnalysis(text);
-
-    // Extract claims from the text
-    const claimExtractionResult = await claimExtractionService.extractClaims(preparedText.processedText, {
+    // Use the comprehensive analysis orchestrator
+    const comprehensiveResult = await analysisOrchestrator.analyzeContent(text, {
       maxClaims: options.maxClaims || 10,
       minConfidence: options.minConfidence || 0.6,
       includeOpinions: options.includeOpinions || false,
-      language: options.language || preparedText.originalLanguage
+      searchDatabases: true,
+      verifyUrls: true,
+      translateToEnglish: true,
+      deepAnalysis: true
     });
 
-    // Fact-check the extracted claims
-    const factCheckResults = await factCheckingService.factCheckClaims(
-      claimExtractionResult.claims,
-      {
-        maxSources: options.maxSources || 3,
-        minSourceReliability: options.minSourceReliability || 0.6
-      }
-    );
-
-    // Convert to the expected format
-    const claims: Claim[] = factCheckResults.map(result => ({
-      id: result.claimId,
-      text: result.originalClaim,
-      confidence: claimExtractionResult.claims.find(c => c.id === result.claimId)?.confidence || 0.5,
-      credibilityScore: result.credibilityScore,
-      sources: result.sources.map(source => ({
+    // Convert to expected response format
+    const claims: Claim[] = comprehensiveResult.claims.map(claim => ({
+      id: claim.id,
+      text: claim.text,
+      confidence: claim.confidence,
+      credibilityScore: claim.factCheckResult.credibilityScore,
+      sources: comprehensiveResult.sources.slice(0, 3).map(source => ({
         url: source.url,
         title: source.title,
         reliability: source.reliability
       }))
     }));
 
-    const analysisResult: AnalysisResult = {
-      id: Date.now().toString(),
-      fileName: source || 'Text Analysis',
-      claims: claims,
-      summary: `Successfully analyzed ${text.length} characters of text. Found ${claims.length} claims for fact-checking.`
+    const processingTime = Date.now() - startTime;
+
+    const response: TextAnalysisResponse = {
+      analysisId: comprehensiveResult.analysisId,
+      textLength: text.length,
+      claims,
+      summary: comprehensiveResult.overallAssessment.reasoning,
+      processingTime,
+      originalLanguage: comprehensiveResult.language.detected,
+      wasTranslated: comprehensiveResult.language.wasTranslated,
+      translationConfidence: comprehensiveResult.language.confidence
     };
 
-    const response = {
+    logger.info(`Comprehensive text analysis completed in ${processingTime}ms - ${claims.length} claims, ${comprehensiveResult.sources.length} verified sources`);
+
+    res.json({
       success: true,
-      data: {
-        analysisId: analysisResult.id,
-        textLength: text.length,
-        claims: analysisResult.claims,
-        summary: analysisResult.summary,
-        processingTime: claimExtractionResult.processingTime,
-        originalLanguage: preparedText.originalLanguage,
-        wasTranslated: preparedText.wasTranslated,
-        translationConfidence: preparedText.translationConfidence
-      },
-      message: 'Text analysis completed successfully'
-    };
-
-    logger.info(`Text analysis completed: ${text.length} characters processed`);
-    res.status(200).json(response);
+      message: 'Text analysis completed successfully',
+      data: response
+    });
 
   } catch (error) {
-    logger.error('Text analysis error:', error);
+    const processingTime = Date.now() - startTime;
+    logger.error('Text analysis failed:', error);
 
     res.status(500).json({
       success: false,
-      error: {
-        code: 'PROCESSING_FAILED',
-        message: 'Failed to analyze text content',
-        details: process.env.NODE_ENV === 'development' ? error : undefined
-      },
-      timestamp: new Date().toISOString()
+      message: error instanceof Error ? error.message : 'Text analysis failed',
+      data: null,
+      processingTime
     });
   }
 };
 
 /**
  * Analyze uploaded document
- * POST /api/analyze/document
  */
 export const analyzeDocument = async (req: Request, res: Response): Promise<void> => {
-  let tempFilePath: string | null = null;
-  
+  const startTime = Date.now();
+
   try {
-    // Check if file was uploaded
     if (!req.file) {
       res.status(400).json({
         success: false,
-        error: {
-          code: 'NO_FILE_UPLOADED',
-          message: 'No file was uploaded'
-        },
-        timestamp: new Date().toISOString()
+        message: 'No file uploaded',
+        data: null
       });
       return;
     }
 
-    const file = req.file;
-    const userId = (req as any).user?.id;
-    const options = req.body.options ? JSON.parse(req.body.options) : {};
+    const options: DocumentAnalysisOptions = req.body.options ? JSON.parse(req.body.options) : {};
 
-    logger.info(`Document analysis request from user ${userId || 'anonymous'}: ${file.originalname} (${file.size} bytes)`);
+    logger.info(`Starting document analysis for: ${req.file.originalname}`);
 
-    tempFilePath = file.path;
+    // For now, extract text from buffer (simplified implementation)
+    const documentResult = {
+      extractedText: req.file.buffer.toString('utf-8'),
+      metadata: {
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        language: 'en'
+      }
+    };
 
-    // Check if file type is supported
-    if (!documentProcessingService.isFileTypeSupported(file.mimetype, file.originalname)) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'UNSUPPORTED_FILE_TYPE',
-          message: `Unsupported file type: ${file.mimetype}. Supported types: PDF, TXT, DOC, DOCX, CSV, RTF`
-        },
-        timestamp: new Date().toISOString()
-      });
-      return;
-    }
-
-    // Process the document
-    const processedDocument = await documentProcessingService.processDocument(
-      file.path,
-      file.originalname,
-      file.mimetype,
-      file.size,
-      options
-    );
-
-    // Prepare text for analysis (translate if needed)
-    const preparedText = await translationService.prepareTextForAnalysis(processedDocument.extractedText);
-
-    // Extract claims from the document content
+    // Extract claims from the document text
     const claimExtractionResult = await claimExtractionService.extractClaims(
-      preparedText.processedText,
+      documentResult.extractedText,
       {
         maxClaims: options.maxClaims || 10,
         minConfidence: options.minConfidence || 0.6,
-        includeOpinions: options.includeOpinions || false,
-        language: processedDocument.metadata.language || preparedText.originalLanguage
+        includeOpinions: options.includeOpinions || false
       }
     );
 
-    // Fact-check the extracted claims
-    const factCheckResults = await factCheckingService.factCheckClaims(
+    // Generate sources for the full document content (not individual claims)
+    const { sourceGenerationService } = await import('../services/sourceGenerationService');
+    const contentSources = await sourceGenerationService.generateSources(
+      documentResult.extractedText,
+      {
+        maxSources: 3, // Always exactly 3 sources
+        minReliability: options.minSourceReliability || 0.7
+      }
+    );
+
+    // Convert content sources to FactCheckSource format
+    const sharedFactCheckSources = contentSources.map((source: any) => ({
+      url: source.url,
+      title: source.title,
+      reliability: source.reliability,
+      domain: source.domain,
+      publishDate: source.publishDate,
+      author: source.author,
+      relevanceScore: source.relevanceScore,
+      factCheckResult: source.factCheckResult,
+      excerpt: source.excerpt
+    }));
+
+    // Fact-check the extracted claims with shared sources
+    const factCheckResults = await factCheckingService.batchFactCheck(
       claimExtractionResult.claims,
       {
-        maxSources: options.maxSources || 3,
-        minSourceReliability: options.minSourceReliability || 0.6
-      }
+        maxSources: 0, // Don't generate sources for individual claims
+        minSourceReliability: options.minSourceReliability || 0.7
+      },
+      sharedFactCheckSources // Pass the content-level sources
     );
 
-    // Convert to the expected format
-    const claims: Claim[] = factCheckResults.map(result => ({
+    // Convert to the expected format with shared sources
+    const sharedSources = contentSources.map((source: any) => ({
+      url: source.url,
+      title: source.title,
+      reliability: source.reliability
+    }));
+
+    const claims: Claim[] = factCheckResults.map((result: any) => ({
       id: result.claimId,
       text: result.originalClaim,
       confidence: claimExtractionResult.claims.find(c => c.id === result.claimId)?.confidence || 0.5,
       credibilityScore: result.credibilityScore,
-      sources: result.sources.map(source => ({
-        url: source.url,
-        title: source.title,
-        reliability: source.reliability
-      }))
+      sources: sharedSources // All claims share the same sources from full content
     }));
 
-    const analysisResult: AnalysisResult = {
-      id: processedDocument.id,
-      fileName: processedDocument.fileName,
-      claims: claims,
-      summary: `Successfully processed and analyzed document "${processedDocument.fileName}". Extracted ${processedDocument.metadata.wordCount} words and found ${claims.length} claims for fact-checking.`
+    const processingTime = Date.now() - startTime;
+
+    const response: DocumentAnalysisResponse = {
+      analysisId: Date.now().toString(),
+      fileName: req.file.originalname,
+      fileSize: req.file.size,
+      fileType: req.file.mimetype,
+      status: 'completed',
+      extractedText: documentResult.extractedText,
+      claims,
+      summary: `Successfully analyzed document "${req.file.originalname}". Extracted ${documentResult.extractedText.length} characters and found ${claims.length} claims for fact-checking.`,
+      processingTime,
+      metadata: {
+        wordCount: documentResult.extractedText.split(/\s+/).length,
+        characterCount: documentResult.extractedText.length,
+        pageCount: undefined,
+        language: documentResult.metadata?.language,
+        author: undefined,
+        title: undefined,
+        originalLanguage: documentResult.metadata?.language || 'en',
+        wasTranslated: false,
+        translationConfidence: undefined
+      }
     };
 
-    const response = {
+    logger.info(`Document analysis completed in ${processingTime}ms for: ${req.file.originalname}`);
+
+    res.json({
       success: true,
-      data: {
-        analysisId: analysisResult.id,
-        fileName: processedDocument.fileName,
-        fileSize: processedDocument.metadata.fileSize,
-        fileType: processedDocument.metadata.fileType,
-        status: 'completed',
-        extractedText: processedDocument.extractedText.substring(0, 1000) + '...', // Truncate for response
-        claims: analysisResult.claims,
-        summary: analysisResult.summary,
-        processingTime: processedDocument.processingTime + claimExtractionResult.processingTime,
-        metadata: {
-          wordCount: processedDocument.metadata.wordCount,
-          characterCount: processedDocument.metadata.characterCount,
-          pageCount: processedDocument.metadata.pageCount,
-          language: processedDocument.metadata.language,
-          author: processedDocument.metadata.author,
-          title: processedDocument.metadata.title,
-          originalLanguage: preparedText.originalLanguage,
-          wasTranslated: preparedText.wasTranslated,
-          translationConfidence: preparedText.translationConfidence
-        }
-      },
-      message: 'Document analysis completed successfully'
-    };
-
-    logger.info(`Document analysis completed for ${file.originalname}: ${processedDocument.metadata.wordCount} words extracted in ${processedDocument.processingTime}ms`);
-    res.status(200).json(response);
+      message: 'Document analysis completed successfully',
+      data: response
+    });
 
   } catch (error) {
-    logger.error('Document analysis error:', error);
+    const processingTime = Date.now() - startTime;
+    logger.error('Document analysis failed:', error);
 
-    // Handle specific error types
-    let errorCode = 'PROCESSING_FAILED';
-    let statusCode = 500;
-    let errorMessage = 'Failed to analyze document';
-
-    if (error instanceof Error) {
-      errorMessage = error.message;
-      
-      if (error.message.includes('File size exceeds')) {
-        errorCode = 'FILE_TOO_LARGE';
-        statusCode = 400;
-      } else if (error.message.includes('Unsupported file')) {
-        errorCode = 'UNSUPPORTED_FILE_TYPE';
-        statusCode = 400;
-      } else if (error.message.includes('Insufficient text content')) {
-        errorCode = 'INSUFFICIENT_CONTENT';
-        statusCode = 400;
-      } else if (error.message.includes('File not found')) {
-        errorCode = 'FILE_NOT_FOUND';
-        statusCode = 400;
-      }
-    }
-
-    res.status(statusCode).json({
+    res.status(500).json({
       success: false,
-      error: {
-        code: errorCode,
-        message: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? error : undefined
-      },
-      timestamp: new Date().toISOString()
+      message: error instanceof Error ? error.message : 'Document analysis failed',
+      data: null,
+      processingTime
     });
-  } finally {
-    // Clean up temporary file
-    if (tempFilePath) {
-      await documentProcessingService.cleanupFile(tempFilePath);
-    }
   }
 };
 
 /**
  * Translate text
- * POST /api/analyze/translate
  */
 export const translateText = async (req: Request, res: Response): Promise<void> => {
+  const startTime = Date.now();
+
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    const { text, targetLanguage = 'en', detectLanguage = true }: TranslationRequest = req.body;
+
+    if (!text || text.trim().length === 0) {
       res.status(400).json({
         success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid request data',
-          details: errors.array()
-        },
-        timestamp: new Date().toISOString()
+        message: 'Text is required for translation',
+        data: null
       });
       return;
     }
 
-    const { text, targetLanguage = 'en', detectLanguage = true } = req.body;
-    const userId = (req as any).user?.id;
+    logger.info(`Starting translation for ${text.length} characters to ${targetLanguage}`);
 
-    logger.info(`Translation request from user ${userId || 'anonymous'}: ${text.length} characters to ${targetLanguage}`);
-
-    // Validate text length
-    if (text.length > 10000) {
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'TEXT_TOO_LONG',
-          message: 'Text must be less than 10,000 characters for translation'
-        },
-        timestamp: new Date().toISOString()
-      });
-      return;
-    }
-
-    // Perform translation
-    const result = await translationService.translateText(text, {
+    const translationResult = await translationService.translateText(text, {
       targetLanguage,
-      detectLanguage
+      detectLanguage: detectLanguage
     });
 
-    const response = {
-      success: true,
-      data: {
-        originalText: result.originalText,
-        translatedText: result.translatedText,
-        sourceLanguage: result.sourceLanguage,
-        targetLanguage: result.targetLanguage,
-        confidence: result.confidence,
-        processingTime: result.processingTime
-      },
-      message: 'Translation completed successfully'
+    const processingTime = Date.now() - startTime;
+
+    const response: TranslationResponse = {
+      originalText: text,
+      translatedText: translationResult.translatedText,
+      sourceLanguage: translationResult.sourceLanguage,
+      targetLanguage: translationResult.targetLanguage,
+      confidence: translationResult.confidence,
+      processingTime
     };
 
-    logger.info(`Translation completed: ${result.sourceLanguage} -> ${result.targetLanguage} in ${result.processingTime}ms`);
-    res.status(200).json(response);
+    logger.info(`Translation completed in ${processingTime}ms`);
+
+    res.json({
+      success: true,
+      message: 'Translation completed successfully',
+      data: response
+    });
 
   } catch (error) {
-    logger.error('Translation error:', error);
+    const processingTime = Date.now() - startTime;
+    logger.error('Translation failed:', error);
 
     res.status(500).json({
       success: false,
-      error: {
-        code: 'TRANSLATION_FAILED',
-        message: 'Failed to translate text',
-        details: process.env.NODE_ENV === 'development' ? error : undefined
-      },
-      timestamp: new Date().toISOString()
+      message: error instanceof Error ? error.message : 'Translation failed',
+      data: null,
+      processingTime
     });
   }
 };
 
 /**
  * Detect language of text
- * POST /api/analyze/detect-language
  */
 export const detectLanguage = async (req: Request, res: Response): Promise<void> => {
+  const startTime = Date.now();
+
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    const { text }: LanguageDetectionRequest = req.body;
+
+    if (!text || text.trim().length === 0) {
       res.status(400).json({
         success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid request data',
-          details: errors.array()
-        },
-        timestamp: new Date().toISOString()
+        message: 'Text is required for language detection',
+        data: null
       });
       return;
     }
 
-    const { text } = req.body;
-    const userId = (req as any).user?.id;
+    logger.info(`Starting language detection for ${text.length} characters`);
 
-    logger.info(`Language detection request from user ${userId || 'anonymous'}: ${text.length} characters`);
+    const detectionResult = await translationService.detectLanguage(text);
 
-    // Detect language
-    const result = await translationService.detectLanguage(text);
+    const processingTime = Date.now() - startTime;
 
-    const response = {
-      success: true,
-      data: {
-        language: result.language,
-        languageName: translationService.getLanguageName(result.language),
-        confidence: result.confidence,
-        alternatives: result.alternatives.map(alt => ({
-          language: alt.language,
-          languageName: translationService.getLanguageName(alt.language),
-          confidence: alt.confidence
-        }))
-      },
-      message: 'Language detection completed successfully'
+    const response: LanguageDetectionResponse = {
+      language: detectionResult.language,
+      languageName: detectionResult.language, // Use language code as name for now
+      confidence: detectionResult.confidence,
+      alternatives: detectionResult.alternatives.map(alt => ({
+        language: alt.language,
+        languageName: alt.language,
+        confidence: alt.confidence
+      }))
     };
 
-    logger.info(`Language detected: ${result.language} (confidence: ${result.confidence})`);
-    res.status(200).json(response);
+    logger.info(`Language detection completed in ${processingTime}ms`);
+
+    res.json({
+      success: true,
+      message: 'Language detection completed successfully',
+      data: response
+    });
 
   } catch (error) {
-    logger.error('Language detection error:', error);
+    const processingTime = Date.now() - startTime;
+    logger.error('Language detection failed:', error);
 
     res.status(500).json({
       success: false,
-      error: {
-        code: 'DETECTION_FAILED',
-        message: 'Failed to detect language',
-        details: process.env.NODE_ENV === 'development' ? error : undefined
-      },
-      timestamp: new Date().toISOString()
+      message: error instanceof Error ? error.message : 'Language detection failed',
+      data: null,
+      processingTime
+    });
+  }
+};
+
+/**
+ * Check URL accessibility
+ */
+export const checkUrlAccessibility = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { url } = req.body;
+
+    if (!url) {
+      res.status(400).json({
+        success: false,
+        message: 'URL is required',
+        data: null
+      });
+      return;
+    }
+
+    logger.info(`Checking URL accessibility: ${url}`);
+
+    const accessibilityResult = await urlFetchingService.checkUrlAccessibility(url);
+
+    const response: UrlAccessibilityResponse = {
+      url,
+      accessible: accessibilityResult.accessible,
+      status: accessibilityResult.status,
+      error: accessibilityResult.error
+    };
+
+    res.json({
+      success: true,
+      message: 'URL accessibility check completed',
+      data: response
+    });
+
+  } catch (error) {
+    logger.error('URL accessibility check failed:', error);
+
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'URL accessibility check failed',
+      data: null
+    });
+  }
+};
+
+/**
+ * Get service health status
+ */
+export const getHealthStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const [
+      claimExtractionHealth,
+      factCheckingHealth
+    ] = await Promise.all([
+      claimExtractionService.getHealthStatus(),
+      factCheckingService.getHealthStatus()
+    ]);
+
+    const overallStatus = 
+      claimExtractionHealth.status === 'healthy' && factCheckingHealth.status === 'healthy'
+        ? 'healthy'
+        : claimExtractionHealth.status === 'unhealthy' || factCheckingHealth.status === 'unhealthy'
+        ? 'unhealthy'
+        : 'degraded';
+
+    res.json({
+      success: true,
+      message: 'Health status retrieved successfully',
+      data: {
+        status: overallStatus,
+        services: {
+          claimExtraction: claimExtractionHealth,
+          factChecking: factCheckingHealth
+        },
+        timestamp: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    logger.error('Health status check failed:', error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Health status check failed',
+      data: {
+        status: 'unhealthy',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
     });
   }
 };

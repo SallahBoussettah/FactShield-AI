@@ -135,8 +135,8 @@ export const exportUserData = async (userId: string): Promise<Blob> => {
       userId,
       settings: await getUserSettings(userId),
       history: [
-        { id: 'hist1', date: new Date().toISOString(), url: 'https://example.com/article1', score: 0.85 },
-        { id: 'hist2', date: new Date(Date.now() - 86400000).toISOString(), url: 'https://example.com/article2', score: 0.42 },
+        { id: 'hist1', date: new Date().toISOString(), url: 'Sample Analysis #1', score: 0.85 },
+        { id: 'hist2', date: new Date(Date.now() - 86400000).toISOString(), url: 'Sample Analysis #2', score: 0.42 },
       ],
       profile: {
         name: 'Demo User',
