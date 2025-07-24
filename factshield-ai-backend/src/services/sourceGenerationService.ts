@@ -59,7 +59,7 @@ class SourceGenerationService {
   }
 
   /**
-   * Generate sources using multiple real APIs and verification
+   * Generate diverse, intelligent sources using Gemini AI with real URL verification
    */
   async generateSources(
     fullContent: string, 
@@ -73,38 +73,164 @@ class SourceGenerationService {
     };
 
     try {
-      logger.info(`Generating verified sources for content: ${fullContent.substring(0, 50)}...`);
+      logger.info(`Generating intelligent sources for content: ${fullContent.substring(0, 50)}...`);
 
-      // Extract key topics and entities from content
-      const topics = await this.extractTopicsFromContent(fullContent);
+      // Use Gemini AI to generate diverse, real sources
+      const geminiSources = await this.generateIntelligentSourcesWithGemini(fullContent, config);
       
-      // Search for sources using multiple strategies
-      const sources = await Promise.all([
-        this.searchFactCheckingSites(topics, config),
-        this.searchNewsAPIs(topics, config),
-        this.searchAcademicSources(topics, config)
-      ]);
+      if (geminiSources.length > 0) {
+        // Verify all Gemini-generated URLs
+        const verifiedSources = await this.verifySourceUrls(geminiSources);
+        
+        // Filter and sort verified sources
+        const workingSources = verifiedSources
+          .filter(source => source.verificationStatus === 'verified')
+          .sort((a, b) => (b.reliability * b.relevanceScore) - (a.reliability * a.relevanceScore))
+          .slice(0, config.maxSources);
 
-      // Flatten and deduplicate sources
-      const allSources = sources.flat();
-      const uniqueSources = this.deduplicateSources(allSources);
-      
-      // Verify URLs actually exist
-      const verifiedSources = await this.verifySourceUrls(uniqueSources);
-      
-      // Sort by reliability and relevance
-      const sortedSources = verifiedSources
-        .filter(source => source.verificationStatus === 'verified')
-        .sort((a, b) => (b.reliability * b.relevanceScore) - (a.reliability * a.relevanceScore))
-        .slice(0, config.maxSources);
+        if (workingSources.length > 0) {
+          logger.info(`Generated ${workingSources.length} verified intelligent sources`);
+          return workingSources;
+        }
+      }
 
-      logger.info(`Generated ${sortedSources.length} verified sources`);
-      return sortedSources;
+      // Fallback to curated sources if Gemini fails or no URLs work
+      logger.warn('Gemini source generation failed or no working URLs, using fallback');
+      return await this.generateFallbackSources(fullContent, config);
         
     } catch (error) {
       logger.error('Source generation failed:', error);
+      return await this.generateFallbackSources(fullContent, config);
+    }
+  }
+
+  /**
+   * Generate intelligent, diverse sources using Gemini AI
+   */
+  private async generateIntelligentSourcesWithGemini(
+    content: string, 
+    config: SourceGenerationOptions
+  ): Promise<GeneratedSource[]> {
+    if (!geminiService.isAvailable()) {
+      logger.warn('Gemini not available for intelligent source generation');
       return [];
     }
+
+    try {
+      const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      const prompt = `
+You are an expert researcher with access to current information. Today's date is ${currentDate}.
+
+CONTENT TO RESEARCH:
+"${content.substring(0, 2000)}"
+
+TASK: Find ${config.maxSources} diverse, credible sources that provide information relevant to fact-checking this content. These should be REAL URLs that you know exist and work.
+
+REQUIREMENTS:
+1. Use your knowledge of real websites and their URL structures
+2. Provide diverse source types (news, academic, government, fact-checking, etc.)
+3. Include recent sources when relevant (use today's date: ${currentDate})
+4. Only suggest URLs you are confident exist and work
+5. Avoid generic search URLs - provide specific article/page URLs when possible
+6. Consider the content's topic and find the most authoritative sources
+
+RESPONSE FORMAT (JSON only):
+{
+  "sources": [
+    {
+      "url": "https://real-working-url.com/specific-article",
+      "title": "Specific article or page title",
+      "domain": "domain.com",
+      "sourceType": "news|academic|government|fact_check|reference",
+      "reliability": 0.85,
+      "publishDate": "2024-01-15",
+      "author": "Author Name",
+      "excerpt": "Brief description of what this source says about the topic",
+      "factCheckResult": "supports|contradicts|neutral|insufficient_evidence",
+      "relevanceScore": 0.9
+    }
+  ]
+}
+
+EXAMPLES of good URL patterns:
+- News: https://www.reuters.com/world/specific-article-title-2024-01-15/
+- Academic: https://www.nature.com/articles/s41586-024-xxxxx-x
+- Government: https://www.cdc.gov/specific-topic/index.html
+- Fact-check: https://www.snopes.com/fact-check/specific-claim/
+
+Focus on finding the most credible, relevant sources that actually exist. Respond with valid JSON only.
+`;
+
+      const result = await geminiService.generateSources(prompt);
+      
+      if (result && result.sources && Array.isArray(result.sources)) {
+        const sources: GeneratedSource[] = result.sources.map((source: any) => {
+          // Extract domain from URL if not provided
+          let domain = source.domain;
+          if (!domain && source.url) {
+            try {
+              domain = new URL(source.url).hostname;
+            } catch {
+              domain = 'unknown.com';
+            }
+          }
+
+          return {
+            url: source.url,
+            title: source.title || 'Untitled Source',
+            reliability: Math.max(0.7, Math.min(0.98, source.reliability || 0.85)),
+            domain: domain,
+            publishDate: source.publishDate || currentDate,
+            author: source.author || 'Editorial Team',
+            relevanceScore: Math.max(0.7, Math.min(1.0, source.relevanceScore || 0.9)),
+            factCheckResult: source.factCheckResult || 'neutral',
+            excerpt: source.excerpt || 'Relevant information about the topic',
+            sourceType: source.sourceType || 'reference',
+            verificationStatus: 'unverified' // Will be verified next
+          };
+        });
+
+        logger.info(`Gemini generated ${sources.length} intelligent source candidates`);
+        return sources;
+      }
+
+      logger.warn('Gemini did not return valid sources');
+      return [];
+
+    } catch (error) {
+      logger.error('Gemini intelligent source generation failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Fallback source generation using curated approach
+   */
+  private async generateFallbackSources(
+    content: string, 
+    config: SourceGenerationOptions
+  ): Promise<GeneratedSource[]> {
+    logger.info('Using fallback source generation');
+    
+    // Extract key topics for fallback
+    const topics = await this.extractTopicsFromContent(content);
+    
+    // Generate curated sources based on topics
+    const sources = await Promise.all([
+      this.searchFactCheckingSites(topics, config),
+      this.searchNewsAPIs(topics, config),
+      this.searchAcademicSources(topics, config)
+    ]);
+
+    const allSources = sources.flat();
+    const uniqueSources = this.deduplicateSources(allSources);
+    const verifiedSources = await this.verifySourceUrls(uniqueSources);
+    
+    return verifiedSources
+      .filter(source => source.verificationStatus === 'verified')
+      .sort((a, b) => (b.reliability * b.relevanceScore) - (a.reliability * a.relevanceScore))
+      .slice(0, config.maxSources);
   }
 
 
@@ -334,37 +460,78 @@ Respond with valid JSON only.
   }
 
   /**
-   * Verify that URLs actually exist and are accessible
+   * Advanced URL verification with multiple strategies
    */
   private async verifySourceUrls(sources: GeneratedSource[]): Promise<GeneratedSource[]> {
     const verifiedSources: GeneratedSource[] = [];
+    let verifiedCount = 0;
+    let failedCount = 0;
+
+    logger.info(`Starting verification of ${sources.length} source URLs...`);
 
     for (const source of sources) {
-      try {
-        const response = await axios.head(source.url, {
-          timeout: 5000,
-          validateStatus: (status) => status >= 200 && status < 400
-        });
-
-        verifiedSources.push({
-          ...source,
-          verificationStatus: 'verified'
-        });
-
-        logger.info(`Verified source: ${source.url} (${response.status})`);
-      } catch (error) {
-        logger.warn(`Failed to verify source: ${source.url}`, { message: error instanceof Error ? error.message : String(error) });
-        verifiedSources.push({
-          ...source,
-          verificationStatus: 'failed'
-        });
+      const verificationResult = await this.verifyIndividualUrl(source);
+      verifiedSources.push(verificationResult);
+      
+      if (verificationResult.verificationStatus === 'verified') {
+        verifiedCount++;
+      } else {
+        failedCount++;
       }
 
-      // Add delay to avoid overwhelming servers
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Add delay to be respectful to servers
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
 
+    logger.info(`URL verification complete: ${verifiedCount} verified, ${failedCount} failed`);
     return verifiedSources;
+  }
+
+  /**
+   * Verify individual URL with multiple methods
+   */
+  private async verifyIndividualUrl(source: GeneratedSource): Promise<GeneratedSource> {
+    const methods = [
+      { name: 'HEAD', method: 'head' },
+      { name: 'GET', method: 'get' }
+    ];
+
+    for (const method of methods) {
+      try {
+        const axiosMethod = method.method === 'head' ? axios.head : axios.get;
+        const response = await axiosMethod(source.url, {
+          timeout: 8000,
+          maxRedirects: 3,
+          validateStatus: (status) => status >= 200 && status < 400,
+          headers: {
+            'User-Agent': 'FactShield-AI/1.0 (Fact-checking bot)',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+          }
+        });
+
+        logger.info(`✅ Verified source (${method.name}): ${source.url} (${response.status})`);
+        
+        return {
+          ...source,
+          verificationStatus: 'verified'
+        };
+
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        logger.debug(`${method.name} failed for ${source.url}: ${errorMsg}`);
+        
+        // Continue to next method
+        continue;
+      }
+    }
+
+    // All methods failed
+    logger.warn(`❌ Failed to verify source: ${source.url} (all methods failed)`);
+    
+    return {
+      ...source,
+      verificationStatus: 'failed'
+    };
   }
 
   /**
