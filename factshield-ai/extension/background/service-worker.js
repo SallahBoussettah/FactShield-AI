@@ -1,8 +1,9 @@
 // Background service worker for FactShield AI extension
 // This script runs in the background and handles communication with the API
 
-// API endpoint (will be configured in the options)
-let API_BASE_URL = 'http://localhost:5173/api';
+// API endpoint - connects to your FactShield AI backend
+let API_BASE_URL = 'http://localhost:3001/api';
+const WEBSITE_URL = 'http://localhost:5173';
 
 // Cache configuration
 const CACHE_EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
@@ -54,16 +55,52 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   if (message.action === 'getAuthStatus') {
-    chrome.storage.local.get(['authToken', 'userData'])
-      .then(data => {
-        sendResponse({
-          isAuthenticated: !!data.authToken,
-          userData: data.userData || null
-        });
-      })
+    getAuthStatus()
+      .then(result => sendResponse(result))
       .catch(error => {
         console.error('Error getting auth status:', error);
         sendResponse({ isAuthenticated: false, userData: null });
+      });
+    return true; // Required for async response
+  }
+  
+  if (message.action === 'login') {
+    handleLogin(message.credentials)
+      .then(result => sendResponse(result))
+      .catch(error => {
+        console.error('Error during login:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // Required for async response
+  }
+  
+  if (message.action === 'logout') {
+    handleLogout()
+      .then(result => sendResponse(result))
+      .catch(error => {
+        console.error('Error during logout:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // Required for async response
+  }
+  
+  if (message.action === 'refreshToken') {
+    refreshAuthToken()
+      .then(result => sendResponse(result))
+      .catch(error => {
+        console.error('Error refreshing token:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // Required for async response
+  }
+  
+  if (message.action === 'extensionAuth') {
+    // Handle authentication from website
+    handleExtensionAuth(message)
+      .then(result => sendResponse(result))
+      .catch(error => {
+        console.error('Error handling extension auth:', error);
+        sendResponse({ success: false, error: error.message });
       });
     return true; // Required for async response
   }
@@ -88,6 +125,243 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Required for async response
   }
 });
+
+// Authentication Functions
+
+/**
+ * Get current authentication status
+ */
+async function getAuthStatus() {
+  try {
+    const data = await chrome.storage.local.get(['authToken', 'userData', 'tokenExpiry']);
+    
+    if (!data.authToken) {
+      return { isAuthenticated: false, userData: null };
+    }
+    
+    // Check if token is expired
+    if (data.tokenExpiry && Date.now() > data.tokenExpiry) {
+      // Try to refresh token
+      const refreshResult = await refreshAuthToken();
+      if (refreshResult.success) {
+        return { 
+          isAuthenticated: true, 
+          userData: refreshResult.userData,
+          tokenRefreshed: true
+        };
+      } else {
+        // Token refresh failed, user needs to login again
+        await handleLogout();
+        return { isAuthenticated: false, userData: null, tokenExpired: true };
+      }
+    }
+    
+    return {
+      isAuthenticated: true,
+      userData: data.userData || null
+    };
+  } catch (error) {
+    console.error('Error getting auth status:', error);
+    return { isAuthenticated: false, userData: null, error: error.message };
+  }
+}
+
+/**
+ * Handle login with credentials
+ */
+async function handleLogin(credentials) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(credentials)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Login failed');
+    }
+    
+    const result = await response.json();
+    
+    // Handle your API response structure
+    const data = result.data || result;
+    
+    // Store authentication data
+    await chrome.storage.local.set({
+      authToken: data.token,
+      userData: data.user,
+      tokenExpiry: data.expiresAt ? new Date(data.expiresAt).getTime() : null,
+      refreshToken: data.refreshToken || null
+    });
+    
+    return {
+      success: true,
+      user: data.user,
+      message: 'Login successful'
+    };
+  } catch (error) {
+    console.error('Login error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Handle logout
+ */
+async function handleLogout() {
+  try {
+    // Get current token for logout request
+    const data = await chrome.storage.local.get('authToken');
+    
+    if (data.authToken) {
+      // Notify server about logout
+      try {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${data.authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (error) {
+        // Ignore server errors during logout
+        console.warn('Server logout failed:', error);
+      }
+    }
+    
+    // Clear local storage
+    await chrome.storage.local.remove([
+      'authToken', 
+      'userData', 
+      'tokenExpiry', 
+      'refreshToken',
+      'analysisHistory' // Clear user-specific data
+    ]);
+    
+    return {
+      success: true,
+      message: 'Logout successful'
+    };
+  } catch (error) {
+    console.error('Logout error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Refresh authentication token
+ */
+async function refreshAuthToken() {
+  try {
+    const data = await chrome.storage.local.get(['refreshToken', 'authToken']);
+    
+    if (!data.refreshToken) {
+      throw new Error('No refresh token available');
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${data.authToken}`
+      },
+      body: JSON.stringify({
+        refreshToken: data.refreshToken
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Token refresh failed');
+    }
+    
+    const refreshData = await response.json();
+    
+    // Update stored tokens
+    await chrome.storage.local.set({
+      authToken: refreshData.token,
+      userData: refreshData.user,
+      tokenExpiry: refreshData.expiresAt ? new Date(refreshData.expiresAt).getTime() : null,
+      refreshToken: refreshData.refreshToken || data.refreshToken
+    });
+    
+    return {
+      success: true,
+      userData: refreshData.user,
+      message: 'Token refreshed successfully'
+    };
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Handle authentication from website (OAuth-like flow)
+ */
+async function handleExtensionAuth(message) {
+  try {
+    if (!message.success || !message.token) {
+      throw new Error('Invalid authentication data');
+    }
+    
+    // Since the token is coming from your authenticated web app, we can trust it
+    // No need to verify with server as it's already been validated during login
+    
+    // Store authentication data
+    await chrome.storage.local.set({
+      authToken: message.token,
+      userData: message.user,
+      tokenExpiry: message.expiresAt ? new Date(message.expiresAt).getTime() : null,
+      refreshToken: message.refreshToken || null
+    });
+    
+    return {
+      success: true,
+      user: message.user,
+      message: 'Authentication successful'
+    };
+  } catch (error) {
+    console.error('Extension auth error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Check if user is authenticated and token is valid
+ */
+async function isAuthenticated() {
+  const authStatus = await getAuthStatus();
+  return authStatus.isAuthenticated;
+}
+
+/**
+ * Get valid auth token (refreshes if needed)
+ */
+async function getValidAuthToken() {
+  const authStatus = await getAuthStatus();
+  
+  if (!authStatus.isAuthenticated) {
+    throw new Error('User not authenticated');
+  }
+  
+  const data = await chrome.storage.local.get('authToken');
+  return data.authToken;
+}
 
 // Function to analyze content with caching
 async function analyzeContentWithCaching(content, url, tabId, timestamp) {
@@ -115,13 +389,12 @@ async function analyzeContentWithCaching(content, url, tabId, timestamp) {
       };
     }
     
-    // Get auth token
-    const authData = await chrome.storage.local.get('authToken');
-    const token = authData.authToken;
-    
-    // Check if authenticated
-    if (!token) {
-      const error = { 
+    // Get valid auth token (this will refresh if needed)
+    let token;
+    try {
+      token = await getValidAuthToken();
+    } catch (error) {
+      const authError = { 
         status: 'error',
         error: 'not_authenticated',
         message: 'User not authenticated'
@@ -129,24 +402,89 @@ async function analyzeContentWithCaching(content, url, tabId, timestamp) {
       
       // Show notification for authentication error
       await showNotification(NOTIFICATION_TYPES.ERROR, 'Please log in to analyze content');
-      return error;
+      return authError;
     }
     
-    // Make API request to analyze content
-    const response = await fetch(`${API_BASE_URL}/api/analyze/text`, {
+    // Make API request to analyze content using your backend
+    const response = await fetch(`${API_BASE_URL}/analyze/text`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ 
-        content,
-        url,
-        timestamp 
+        text: content,
+        options: {
+          maxClaims: 5,
+          minConfidence: 0.6,
+          includeOpinions: false,
+          maxSources: 3,
+          minSourceReliability: 0.7
+        }
       })
     });
     
     if (!response.ok) {
+      // Handle authentication errors
+      if (response.status === 401) {
+        // Token might be expired, try to refresh
+        try {
+          const refreshResult = await refreshAuthToken();
+          if (refreshResult.success) {
+            // Retry the request with new token
+            const retryResponse = await fetch(`${API_BASE_URL}/analyze/text`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${refreshResult.token || await getValidAuthToken()}`
+              },
+              body: JSON.stringify({ 
+                text: content,
+                options: {
+                  maxClaims: 5,
+                  minConfidence: 0.6,
+                  includeOpinions: false,
+                  maxSources: 3,
+                  minSourceReliability: 0.7
+                }
+              })
+            });
+            
+            if (retryResponse.ok) {
+              const result = await retryResponse.json();
+              
+              // Cache and process the result
+              await cacheAnalysis(cacheKey, result, url);
+              await storeAnalysisInHistory(result, url);
+              await checkAndNotifyHighRiskContent(result);
+              
+              if (tabId) {
+                chrome.tabs.sendMessage(tabId, {
+                  action: 'analysisResults',
+                  results: result,
+                  fromCache: false
+                });
+              }
+              
+              await showNotification(NOTIFICATION_TYPES.ANALYSIS_COMPLETE, 
+                `Analysis complete: ${result.claims?.length || 0} claims found`);
+              
+              return {
+                status: 'success',
+                results: result,
+                fromCache: false
+              };
+            }
+          }
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
+        }
+        
+        // If refresh failed, user needs to login again
+        await handleLogout();
+        throw new Error('Authentication expired. Please log in again.');
+      }
+      
       throw new Error(`API error: ${response.status}`);
     }
     
@@ -356,20 +694,70 @@ chrome.notifications.onClicked.addListener((notificationId) => {
   chrome.notifications.clear(notificationId);
 });
 
-// Periodic cache cleanup
+// Periodic maintenance tasks
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'cacheCleanup') {
     cleanupExpiredCache();
+  } else if (alarm.name === 'tokenRefresh') {
+    checkAndRefreshToken();
   }
 });
 
-// Set up periodic cache cleanup (every 6 hours)
+// Set up periodic tasks
 chrome.runtime.onStartup.addListener(() => {
+  // Cache cleanup every 6 hours
   chrome.alarms.create('cacheCleanup', {
     delayInMinutes: 360, // 6 hours
     periodInMinutes: 360
   });
+  
+  // Token refresh check every 30 minutes
+  chrome.alarms.create('tokenRefresh', {
+    delayInMinutes: 30,
+    periodInMinutes: 30
+  });
 });
+
+// Also set up alarms when extension is installed
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.alarms.create('cacheCleanup', {
+    delayInMinutes: 360,
+    periodInMinutes: 360
+  });
+  
+  chrome.alarms.create('tokenRefresh', {
+    delayInMinutes: 30,
+    periodInMinutes: 30
+  });
+});
+
+// Function to check and refresh token if needed
+async function checkAndRefreshToken() {
+  try {
+    const data = await chrome.storage.local.get(['authToken', 'tokenExpiry', 'refreshToken']);
+    
+    if (!data.authToken || !data.tokenExpiry) {
+      return; // No token or expiry info
+    }
+    
+    // Check if token expires within the next 10 minutes
+    const tenMinutesFromNow = Date.now() + (10 * 60 * 1000);
+    
+    if (data.tokenExpiry < tenMinutesFromNow && data.refreshToken) {
+      console.log('Token expiring soon, attempting refresh...');
+      const refreshResult = await refreshAuthToken();
+      
+      if (refreshResult.success) {
+        console.log('Token refreshed successfully');
+      } else {
+        console.warn('Token refresh failed:', refreshResult.error);
+        // Don't logout automatically, let user continue until token actually expires
+      }
+    }
+  } catch (error) {
+    console.error('Error checking token expiry:', error);
+  }
+}
 
 // Function to clean up expired cache entries
 async function cleanupExpiredCache() {

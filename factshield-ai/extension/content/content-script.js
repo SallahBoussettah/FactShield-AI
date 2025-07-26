@@ -1,6 +1,13 @@
 // Content script for FactShield AI extension
 // This script runs in the context of web pages and handles content analysis
 
+// Add extension detection marker for web app integration
+document.documentElement.setAttribute('data-factshield-extension', 'installed');
+window.factshieldExtension = {
+  version: '1.0.0',
+  installed: true
+};
+
 // Global variables
 let isAnalyzing = false;
 let highlightedElements = [];

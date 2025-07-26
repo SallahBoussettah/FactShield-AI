@@ -31,9 +31,19 @@
             "css": [
                 "content/content-styles.css"
             ]
+        },
+        {
+            "matches": [
+                "http://localhost:5173/*",
+                "http://localhost:3000/*",
+                "https://*.factshield-ai.com/*"
+            ],
+            "js": [
+                "content/auth-bridge.js"
+            ]
         }
     ],
-    "options_page": "options/options.html",
+    "options_page": "options/auth-settings.html",
     "permissions": [
         "storage",
         "activeTab",
@@ -44,7 +54,9 @@
         "tabs"
     ],
     "host_permissions": [
+        "http://localhost:3001/*",
         "http://localhost:5173/*",
+        "http://localhost:3000/*",
         "https://*.factshield-ai.com/*"
     ],
     "web_accessible_resources": [
